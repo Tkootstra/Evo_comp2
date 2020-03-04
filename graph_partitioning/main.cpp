@@ -42,7 +42,6 @@ public:
 	}  
 };
 
-
 std::list<Solution> makeMultipleRandomSolution(int bitLength, int amount)
 {
     std::list<Solution> allSolutions;
@@ -59,14 +58,8 @@ std::list<Solution> makeMultipleRandomSolution(int bitLength, int amount)
     return allSolutions;
 }
 
-
-
-
-
-
 int main()
 {
-   
     std::ifstream dataFile("Graph500.txt");
     std::string line;
     std::list<Node> nodeList;
@@ -93,11 +86,7 @@ int main()
         // make new nodes for each input line
         Node newNode = Node(vertexNumber, nConnections, otherLocs);
         nodeList.push_back(newNode);
-        
     }
     std::cout << "Parsed data from txt file. Total amount of nodes: \n";
     std::cout << nodeList.size() << "\n";
-
- 
-
 }
