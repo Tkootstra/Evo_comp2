@@ -15,11 +15,9 @@
 // c++ -std=c++17 -stdlib=libc++ main.cpp -o prog 
 // ./prog
 
-
 using namespace std;
 
 // Node class
-
 class Node
 {
 public:
@@ -48,22 +46,21 @@ public:
         else
         {
             belongsToWhichPartition = 1;
-        }
-        
+        }  
         
     }
 };
 
 
-
 class Graph
 {
     public:
-    int baseGainPartition0;
-    int baseGainPartition1;
+    int cutStatePartition0;  // The amount of connections between partition 0 and 1
+    int cutStatePartition1;
 
     std::vector<Node> Nodes;
     std::vector<int> gains;
+    
     Graph(std::vector<Node> nodeList, vector<int> solution)
     {
         for (size_t i = 0; i < nodeList.size(); i++)
@@ -72,16 +69,29 @@ class Graph
             nodeList[i].setPartition(idx);  
         }
 
-        Nodes = nodeList;
-        
-        
+        Nodes = nodeList;      
     }
+
+    int getPartitionSize(int partition)
+    {
+        int partitionSize = 0;
+
+        for (size_t i = 0; i < Nodes.size(); i++)
+        {
+            if (Nodes[i].belongsToWhichPartition == partition) 
+            {
+                partitionSize++;
+            }
+        }
+
+        return partitionSize;
+    }
+
     int countCon(int partition)
     // for each node in the graph, if the node belongs to partition 0, 
     // check  all connections from this node and check if they belong to partition 1.
     // if so, 
     {
-        
         int totalValue = 0;
         for (Node checkNode: Nodes)
         {
@@ -103,114 +113,11 @@ class Graph
 
     void countConnections()
     {
-        baseGainPartition0 = countCon(0);
-        baseGainPartition1 = countCon(1);
+        cutStatePartition0 = countCon(0);
+        cutStatePartition1 = countCon(1);
     }
-
-    
-    
-    
+ 
 };
-
-
-
-
-
-
-std::tuple<std::map<int, std::list<int> >, std::map<int, std::list<int> >, int, int>computeGain(Graph graph)
-{
-    std::vector<int> gains;
-    std::cout << "begin" << endl;
-    graph.countConnections();
-    std::cout << "begin2" << endl;
-    int originalBaseGain0 = graph.baseGainPartition0;
-    int originalBaseGain1 = graph.baseGainPartition1;
-    int maxCon = 0;
-    
-    // std::list<std::map<int, std::list<int> > > results;
-    std::map<int, std::list<int> > bucketA;
-    std::map<int, std::list<int> > bucketB;
-    int bucketAmaxPointer = -999999;
-    int bucketBmaxPointer = -999999;
-    
-
-    
-    // elke bit index flippen
-    // voor elke graph die hieruit komt doe je count connections en compare je die met de base gain. 
-    //dit moet je opslaan per node in een list
-    for (size_t i = 0; i < graph.Nodes.size(); i++)
-    {
-        int diff;
-        Node current = graph.Nodes[i];
-        int whichPart = current.belongsToWhichPartition;
-        graph.Nodes[i].flipPartition();
-        graph.countConnections();
-        int gain0 = graph.baseGainPartition0;
-        int gain1 = graph.baseGainPartition1;
-        if (whichPart == 0)
-        {
-            int diff = originalBaseGain0 - gain0;
-
-        }
-        else
-        {
-            int diff = originalBaseGain1 - gain1;
-        }
-        
-         // welke kant moet dit op?
-        std::cout << "difference" << endl;
-        std::cout << diff << endl;
-      
-
-        if (whichPart == 0)
-        {
-            if (diff > bucketAmaxPointer)
-            {
-                bucketAmaxPointer = diff;
-            }
-            bucketA[diff].push_back(current.indexLocation);
-        }
-        else
-        {
-            if (diff > bucketBmaxPointer)
-            {
-                bucketBmaxPointer = diff;
-            }
-            bucketB[diff].push_back(current.indexLocation);
-        } 
-    }
-    //TODO: bug: difference is altijd 1 tussen base graph en alle 500 opties 
-    std::tuple<std::map<int, std::list<int> >, std::map<int, std::list<int> >, int, int> results \
-    (bucketA, bucketB, bucketAmaxPointer, bucketBmaxPointer);
-    return results;
-    
-}
-
-
-
-
-std::list<vector<int> > makeMultipleRandomSolution(int bitLength, int amount)
-{
-    //TODO: moeten gelijk aantal 0 en 1 zijn
-    std::list<vector<int> > allSolutions;
-    for (size_t i = 0; i < amount; i++)
-    {
-        std::vector<int> solution(bitLength);
-         for (size_t j = 0; j < bitLength; j++)
-         {
-             int bit = rand() % 2;
-             solution[j] = bit;
-         }
-        allSolutions.push_back(solution);
-    }
-    return allSolutions;
-}
-
-
-
-
-
-
 
 std::vector<Node> parseGraph()
 {
@@ -252,23 +159,155 @@ std::vector<Node> parseGraph()
     return nodeList;
 }
 
+
+std::tuple<std::map<int, std::list<int> >, std::map<int, std::list<int> >, int, int>computeGain(Graph graph)
+{
+    std::vector<int> gains;
+
+    graph.countConnections(); 
+
+    int originalCutState0 = graph.cutStatePartition0;
+    int originalCutState1 = graph.cutStatePartition1;
+    // int maxCon = 0;
+    
+    // std::list<std::map<int, std::list<int> > > results;
+    std::map<int, std::list<int> > bucket0;
+    std::map<int, std::list<int> > bucket1;
+    int bucket0maxPointer = -999;
+    int bucket1maxPointer = -999;
+    
+    // elke bit index flippen
+    // voor elke graph die hieruit komt doe je count connections en compare je die met de base gain. 
+    //dit moet je opslaan per node in een list
+    for (size_t i = 0; i < graph.Nodes.size(); i++)
+    {
+        
+        Graph tempGraph = graph;
+        Node current = tempGraph.Nodes[i];
+        int whichPart = current.belongsToWhichPartition;
+        
+        tempGraph.Nodes[i].flipPartition();
+        tempGraph.countConnections();
+        
+        int gain0 = tempGraph.cutStatePartition0;
+        int gain1 = tempGraph.cutStatePartition1;
+        int diff;
+        
+        if (whichPart == 0)
+        {
+            diff = originalCutState0 - gain0;
+            
+            if (diff > bucket0maxPointer)
+            {
+                bucket0maxPointer = diff;
+            }
+            bucket0[diff].push_back(current.indexLocation);
+
+        }
+        else
+        {
+            diff = originalCutState1 - gain1;
+
+            if (diff > bucket1maxPointer)
+            {
+                bucket1maxPointer = diff;
+            }
+            bucket1[diff].push_back(current.indexLocation);
+        }
+        
+        std::cout << "difference: ";
+        std::cout << diff << endl;      
+    }
+
+    //TODO: bug: difference is altijd 1 tussen base graph en alle 500 opties 
+    std::tuple<std::map<int, std::list<int> >, std::map<int, std::list<int> >, int, int> results \
+    (bucket0, bucket1, bucket0maxPointer, bucket1maxPointer);
+    return results;
+    
+}
+
+std::vector<int> makeRandomSolution(int stringLength)
+{
+    // Generate random indices
+    std::vector<int> indices(stringLength / 2);
+    for (size_t j = 0; j < indices.size(); j++)
+    {
+        int bit = rand() % indices.size();
+        indices[j] = bit;
+    }
+
+    // Fill in the solution vector
+    std::vector<int> solution(stringLength, 0);
+    for (auto index: indices)
+    {
+        solution[index] = 1;
+    }
+    return solution;
+}
+
+std::vector<int> makeRandomSolutionOld(int stringLength)
+{
+    std::vector<int> solution(stringLength);
+        for (size_t j = 0; j < stringLength; j++)
+        {
+            int bit = rand() % 2;
+            solution[j] = bit;
+        }
+    return solution;
+}
+
+
+std::list<vector<int> > makeMultipleRandomSolution(int stringLength, int amount)
+{
+    //TODO: moeten gelijk aantal 0 en 1 zijn
+    std::list<vector<int> > allSolutions;
+    for (size_t i = 0; i < amount; i++)
+    {
+        allSolutions.push_back(makeRandomSolution(stringLength));
+    }
+    return allSolutions;
+}
+
+void singleFidMath(Graph g)
+{
+    // Compute gain
+    std::tuple<std::map<int, std::list<int> >, std::map<int, \
+    std::list<int> >, int, int> results;
+    results = computeGain(g);
+    
+    // Make buckets and pointers
+    std::map<int, std::list<int> > bucket0;
+    std::map<int, std::list<int> > bucket1;
+    int bucket0maxPointer;
+    int bucket1maxPointer;
+
+    // Unpack tuple
+    std::tie (bucket0, bucket1, bucket0maxPointer, bucket1maxPointer) = results;
+    
+    std::cout << "Max pointer 0: ";
+    std::cout << bucket0maxPointer << endl;
+
+    std::cout << "Max pointer 1: ";
+    std::cout << bucket1maxPointer << endl;
+
+    // Do until both buckets are empty:
+        // If bucket0.size() > bucket1.size():              (And the other way around)
+            // Move node with highest gain from 0 to 1
+            // Remove node from bucket (the node becomes LOCKED)
+
+            // Recompute the gain for all FREE cells
+
+    
+}
+
 int main()
 {   // parse nodes from txt file
     std::vector<Node> NodeList = parseGraph();
-    std::list<vector<int> > solution = makeMultipleRandomSolution(500, 1);
-    // std::cout << "kek" << endl;
-    vector<int> sol = solution.front();
-    // std::cout << "kek" << endl;
-    Graph graaf = Graph(NodeList, sol);
-    // std::cout << "kek" << endl;
-    std::map<int, std::list<int> > bucketA;
-    std::map<int, std::list<int> > bucketB;
-    int bucketAmaxPointer;
-    int bucketBmaxPointer;
+    std::vector<int> solution = makeRandomSolution(500);
 
-    std::tuple<std::map<int, std::list<int> >, std::map<int, \
-    std::list<int> >, int, int>results = computeGain(graaf);
-    std::tie (bucketA, bucketB, bucketAmaxPointer, bucketBmaxPointer) = results;
-    std::cout << bucketAmaxPointer << endl;
+    Graph graaf = Graph(NodeList, solution);
+    singleFidMath(graaf);
+    
+
 }
 
