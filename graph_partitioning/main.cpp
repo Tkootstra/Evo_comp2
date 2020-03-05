@@ -119,6 +119,94 @@ class Graph
  
 };
 
+class Bucket
+{
+    public:
+    std::map<int, std::list<int> > bucket0;
+    std::map<int, std::list<int> > bucket1;
+    int bucket0maxPointer;
+    int bucket1maxPointer;
+    int bucket0Size;
+    int bucket1Size;
+    std::list<int> freeNodes;
+
+    Bucket(std::map<int, std::list<int> > b0, std::map<int, std::list<int> > b1, Graph g)
+    {
+        bucket0 = b0;
+        bucket1 = b1;
+        bucket0maxPointer = -999;
+        bucket1maxPointer = -999;
+        bucket0Size = 0;
+        bucket1Size = 0;
+
+        // freeNodes = getFreeNodes(g);
+        getFreeNodes(g);
+    }
+
+    std::list<int> getFreeNodes(Graph g) 
+    {
+        std::list<int> tempNodes;
+        for (size_t i = 0; i < g.Nodes.size(); i++) 
+        {
+            int index = g.Nodes[i].indexLocation;
+            tempNodes.push_back(index);
+        }
+        // return tempNodes;
+        // rewturn gr==
+        freeNodes = tempNodes;
+    }
+
+    void addToBucket(int partition, int key, int item)
+    {
+        if (partition == 0)
+        {
+            freeNodes.push_back(item);
+            bucket0[key].push_back(item);
+            bucket0Size++;
+
+            if (key > bucket0maxPointer)
+            {
+                bucket0maxPointer = key;
+            }
+
+        }
+        else
+        {
+            freeNodes.push_back(item);
+            bucket1[key].push_back(item);
+            bucket1Size++;
+
+            if (key > bucket1maxPointer)
+            {
+                bucket1maxPointer = key;
+            }
+
+        }
+    }
+
+    int popFromBucketKey(int partition, int key)
+    {
+        // Nu nog iets dat de max pointer omlaag gaat als de list leeg is
+        int item;
+        if (partition == 0)
+        {
+            item = bucket0[key].front();
+            bucket0[key].pop_front();
+            bucket0Size--;
+        }
+        else 
+        {
+            item = bucket1[key].front();
+            bucket1[key].pop_front();
+            bucket1Size--;
+        }
+
+        freeNodes.remove(key);
+        return item;
+    }
+
+};
+
 std::vector<Node> parseGraph()
 {
     std::ifstream dataFile("Graph500.txt");
@@ -160,7 +248,7 @@ std::vector<Node> parseGraph()
 }
 
 
-std::tuple<std::map<int, std::list<int> >, std::map<int, std::list<int> >, int, int>computeGain(Graph graph)
+Bucket computeGain(Graph graph, Bucket currentBucket)
 {
     std::vector<int> gains;
 
@@ -168,61 +256,41 @@ std::tuple<std::map<int, std::list<int> >, std::map<int, std::list<int> >, int, 
 
     int originalCutState0 = graph.cutStatePartition0;
     int originalCutState1 = graph.cutStatePartition1;
-    // int maxCon = 0;
     
     // std::list<std::map<int, std::list<int> > > results;
-    std::map<int, std::list<int> > bucket0;
-    std::map<int, std::list<int> > bucket1;
-    int bucket0maxPointer = -999;
-    int bucket1maxPointer = -999;
     
     // elke bit index flippen
     // voor elke graph die hieruit komt doe je count connections en compare je die met de base gain. 
     //dit moet je opslaan per node in een list
-    for (size_t i = 0; i < graph.Nodes.size(); i++)
+    // for (size_t i = 0; i < graph.Nodes.size(); i++)
+    for(auto freeNode: currentBucket.freeNodes)
     {
         
         Graph tempGraph = graph;
-        Node current = tempGraph.Nodes[i];
+        Node current = tempGraph.Nodes[freeNode];
         int whichPart = current.belongsToWhichPartition;
         
-        tempGraph.Nodes[i].flipPartition();
+        tempGraph.Nodes[freeNode].flipPartition();
         tempGraph.countConnections();
         
         int gain0 = tempGraph.cutStatePartition0;
         int gain1 = tempGraph.cutStatePartition1;
         int diff;
         
-        if (whichPart == 0)
-        {
-            diff = originalCutState0 - gain0;
-            
-            if (diff > bucket0maxPointer)
-            {
-                bucket0maxPointer = diff;
-            }
-            bucket0[diff].push_back(current.indexLocation);
-
-        }
-        else
-        {
-            diff = originalCutState1 - gain1;
-
-            if (diff > bucket1maxPointer)
-            {
-                bucket1maxPointer = diff;
-            }
-            bucket1[diff].push_back(current.indexLocation);
-        }
+        // if
+        diff = originalCutState0 - gain0;
         
-        std::cout << "difference: ";
-        std::cout << diff << endl;      
+        
+        currentBucket.addToBucket(whichPart, diff, current.indexLocation);
+        
+        // std::cout << "difference: ";
+        // std::cout << diff << endl;      
     }
 
     //TODO: bug: difference is altijd 1 tussen base graph en alle 500 opties 
-    std::tuple<std::map<int, std::list<int> >, std::map<int, std::list<int> >, int, int> results \
-    (bucket0, bucket1, bucket0maxPointer, bucket1maxPointer);
-    return results;
+    // std::tuple<std::map<int, std::list<int> >, std::map<int, std::list<int> >, int, int> results \
+    // (bucket0, bucket1, bucket0maxPointer, bucket1maxPointer);
+    return currentBucket;
     
 }
 
@@ -256,7 +324,6 @@ std::vector<int> makeRandomSolutionOld(int stringLength)
     return solution;
 }
 
-
 std::list<vector<int> > makeMultipleRandomSolution(int stringLength, int amount)
 {
     //TODO: moeten gelijk aantal 0 en 1 zijn
@@ -271,33 +338,75 @@ std::list<vector<int> > makeMultipleRandomSolution(int stringLength, int amount)
 void singleFidMath(Graph g)
 {
     // Compute gain
-    std::tuple<std::map<int, std::list<int> >, std::map<int, \
-    std::list<int> >, int, int> results;
-    results = computeGain(g);
-    
-    // Make buckets and pointers
+    // std::tuple<std::map<int, std::list<int> >, std::map<int, \
+    // std::list<int> >, int, int> results;
     std::map<int, std::list<int> > bucket0;
     std::map<int, std::list<int> > bucket1;
-    int bucket0maxPointer;
-    int bucket1maxPointer;
 
-    // Unpack tuple
-    std::tie (bucket0, bucket1, bucket0maxPointer, bucket1maxPointer) = results;
+    Bucket startBucket = Bucket(bucket0, bucket1, g);
+
+    Bucket results = computeGain(g, startBucket);
+    
+    // Make buckets and pointers
+    // std::map<int, std::list<int> > bucket0 = results.bucket0;
+    // std::map<int, std::list<int> > bucket1 = results.bucket1;
+    int b0max = results.bucket0maxPointer;
+    int b1max = results.bucket1maxPointer;
+    int b0size = results.bucket0Size;
+    int b1size = results.bucket1Size;
+
+    int nodeToChange;
+    
     
     std::cout << "Max pointer 0: ";
-    std::cout << bucket0maxPointer << endl;
+    std::cout << b0max << endl;
 
     std::cout << "Max pointer 1: ";
-    std::cout << bucket1maxPointer << endl;
+    std::cout << b1max << endl;
+
+    std::cout << "b0size: ";
+    std::cout << b0size << endl;
 
     // Do until both buckets are empty:
         // If bucket0.size() > bucket1.size():              (And the other way around)
             // Move node with highest gain from 0 to 1
             // Remove node from bucket (the node becomes LOCKED)
 
-            // Recompute the gain for all FREE cells
+        // Recompute the gain for all FREE cells
 
-    
+    while (b0size > 0) // && b1size > 0) 
+    {
+        if (b0size >= b1size) 
+        {
+            nodeToChange = results.popFromBucketKey(0, b0max);
+        }
+        else
+        {
+            nodeToChange = results.popFromBucketKey(1, b1max);
+        }
+
+        // Flip bit
+        Graph tempGraph = g;
+        tempGraph.Nodes[nodeToChange].flipPartition();
+        g = tempGraph;
+        results = computeGain(g, results);
+        
+        // Update metadata
+        b0max = results.bucket0maxPointer;
+        b1max = results.bucket1maxPointer;
+        b0size = results.bucket0Size;
+        b1size = results.bucket1Size;
+
+        std::cout << "Max pointer 0: ";
+        std::cout << b0max << endl;
+
+        std::cout << "Max pointer 1: ";
+        std::cout << b1max << endl;
+
+        std::cout << "b0size: ";
+        std::cout << b0size << endl;
+    }
+
 }
 
 int main()
