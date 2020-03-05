@@ -128,9 +128,9 @@ class Bucket
     int bucket1maxPointer;
     int bucket0Size;
     int bucket1Size;
-    std::list<int> freeNodes;
+    std::list<Node> freeNodes;
 
-    Bucket(std::map<int, std::list<int> > b0, std::map<int, std::list<int> > b1, Graph g)
+    Bucket(std::map<int, std::list<int> > b0, std::map<int, std::list<int> > b1, std::list<Node> fN)
     {
         bucket0 = b0;
         bucket1 = b1;
@@ -139,29 +139,15 @@ class Bucket
         bucket0Size = 0;
         bucket1Size = 0;
 
-        // freeNodes = getFreeNodes(g);
-        getFreeNodes(g);
+        freeNodes = fN;
     }
 
-    std::list<int> getFreeNodes(Graph g) 
-    {
-        std::list<int> tempNodes;
-        for (size_t i = 0; i < g.Nodes.size(); i++) 
-        {
-            int index = g.Nodes[i].indexLocation;
-            tempNodes.push_back(index);
-        }
-        // return tempNodes;
-        // rewturn gr==
-        freeNodes = tempNodes;
-    }
-
-    void addToBucket(int partition, int key, int item)
+    void addToBucket(int partition, int key, Node item)
     {
         if (partition == 0)
         {
             freeNodes.push_back(item);
-            bucket0[key].push_back(item);
+            bucket0[key].push_back(item.indexLocation);
             bucket0Size++;
 
             if (key > bucket0maxPointer)
@@ -173,7 +159,7 @@ class Bucket
         else
         {
             freeNodes.push_back(item);
-            bucket1[key].push_back(item);
+            bucket1[key].push_back(item.indexLocation);
             bucket1Size++;
 
             if (key > bucket1maxPointer)
@@ -201,7 +187,7 @@ class Bucket
             bucket1Size--;
         }
 
-        freeNodes.remove(key);
+        // freeNodes.remove(key);
         return item;
     }
 
@@ -263,14 +249,16 @@ Bucket computeGain(Graph graph, Bucket currentBucket)
     // voor elke graph die hieruit komt doe je count connections en compare je die met de base gain. 
     //dit moet je opslaan per node in een list
     // for (size_t i = 0; i < graph.Nodes.size(); i++)
-    for(auto freeNode: currentBucket.freeNodes)
+    for(Node current: currentBucket.freeNodes)
+    // for (size_t i = 0; i < currentBucket.freeNodes.size(); i++)
     {
         
         Graph tempGraph = graph;
-        Node current = tempGraph.Nodes[freeNode];
+        // Node current = tempGraph.Nodes[freeNode];
+
         int whichPart = current.belongsToWhichPartition;
         
-        tempGraph.Nodes[freeNode].flipPartition();
+        tempGraph.Nodes[current.indexLocation].flipPartition();
         tempGraph.countConnections();
         
         int gain0 = tempGraph.cutStatePartition0;
@@ -281,7 +269,7 @@ Bucket computeGain(Graph graph, Bucket currentBucket)
         diff = originalCutState0 - gain0;
         
         
-        currentBucket.addToBucket(whichPart, diff, current.indexLocation);
+        currentBucket.addToBucket(whichPart, diff, current);
         
         // std::cout << "difference: ";
         // std::cout << diff << endl;      
@@ -335,15 +323,27 @@ std::list<vector<int> > makeMultipleRandomSolution(int stringLength, int amount)
     return allSolutions;
 }
 
-void singleFidMath(Graph g)
+
+std::list<Node> getFreeNodes(Graph g)
 {
+    std::list<Node> tempNodes;
+    for (auto const& node: g.Nodes)
+    {
+        tempNodes.push_back(node);
+    }
+    return tempNodes;
+}
+
+void singleFidMath(Graph g)
+{   
+    std::list<Node> freeNodes = getFreeNodes(g);
     // Compute gain
     // std::tuple<std::map<int, std::list<int> >, std::map<int, \
     // std::list<int> >, int, int> results;
     std::map<int, std::list<int> > bucket0;
     std::map<int, std::list<int> > bucket1;
 
-    Bucket startBucket = Bucket(bucket0, bucket1, g);
+    Bucket startBucket = Bucket(bucket0, bucket1, freeNodes);
 
     Bucket results = computeGain(g, startBucket);
     
