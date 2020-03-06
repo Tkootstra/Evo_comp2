@@ -214,7 +214,7 @@ class Bucket
 };
 
 Bucket computeGain(Graph graph, Bucket currentBucket)
-{
+{ //TODO: deze methode moet bij de bucket class horen
     std::list<int> fixedNodes;
     int whichPart;
     bool notInFixed;
