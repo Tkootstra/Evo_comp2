@@ -390,11 +390,8 @@ void singleFidMath(Graph g)
         b0size = results.bucket0Size;
         b1size = results.bucket1Size;
 
-        std::cout << "b0size: ";
-        std::cout << b0size << endl;
-
-        std::cout << "Current solution: ";
-        std::cout << score << endl << endl;
+        std::cout << "b0size: " << b0size << endl;
+        std::cout << "Current solution: " << score << endl;
     }
 
 }
@@ -408,5 +405,6 @@ int main()
     singleFidMath(graaf);
     
 
-}
+} 
 
+ 
