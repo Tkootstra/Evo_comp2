@@ -86,6 +86,7 @@ void Bucket::updateBucket(int partition, int key, Node item)
                 {
                     // If nodes match, remove from this bucket and add to other bucket
                     nodeList.remove(i);
+                    k.second = nodeList;
                     addToBucket(partition, key, item);
                     // std::cout << "now in bucket " << key << endl;
                     return;
@@ -104,6 +105,7 @@ void Bucket::updateBucket(int partition, int key, Node item)
                 if (i == item)
                 {
                     nodeList.remove(i);
+                    k.second = nodeList;
                     addToBucket(partition, key, item);
                     // std::cout << "now in bucket " << key << endl;
                     return;
@@ -121,7 +123,7 @@ Node Bucket::popFromBucketKey(int partition, int key)
         {
             // Remove from bucket array
             Node item = bucket0[key].front();
-            bucket0[key].pop_front();
+            bucket0[key].remove(item);
             bucket0Size--;
 
             // Push to fixedNodes list
@@ -140,7 +142,7 @@ Node Bucket::popFromBucketKey(int partition, int key)
         if (bucket1[key].size() > 0)
         {
             Node item = bucket1[key].front();
-            bucket1[key].pop_front();
+            bucket1[key].remove(item);
             bucket1Size--;
 
             fixedNodes.push_back(item.indexLocation);

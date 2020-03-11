@@ -451,6 +451,7 @@ void singleFidMath(Graph g)
     {
         // TODO: Segmentation fault occurs somewhere after score print 
         // but before first print in loop??
+        // Seems to always occur around the size=230-240 mark
 
         std::cout << "Moving... ";
         // Move node from 0 to 1
@@ -479,7 +480,8 @@ void singleFidMath(Graph g)
         b1size = results.bucket1Size;
 
         std::cout << "b0: " << b0size << " | b1: " << b1size << endl;
-        std::cout << "Current solution: " << score << endl << endl;
+        std::cout << "Current solution: " << score << endl;
+        std::cout << "Pointer0: " << b0max << " | Pointer1: " << b1max << endl << endl;
     }
 
 }
