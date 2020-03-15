@@ -95,29 +95,33 @@ std::list<vector<int> > makeMultipleRandomSolutions(int stringLength, int amount
 std::vector<int> perturbSolution(std::vector<int> solution, float ratio)
 {
     std::vector<int> tempSolution = solution;
+    int amountToPerturb = (int)(ratio * solution.size());
     
-    int mutationLoc1 = rand() % solution.size();
-    int toMutate1 = solution[mutationLoc1];
-
-    int mutationLoc2 = rand() % solution.size();
-    int toMutate2 = solution[mutationLoc2];
-
-    // If bit-values are the same, try again (must be balanced)
-    while (toMutate2 == toMutate1)
+    for (size_t i = 0; i < amountToPerturb; i++)
     {
-        mutationLoc2 = rand() % solution.size();
-        toMutate2 = solution[mutationLoc2];
-    }
+        int mutationLoc1 = rand() % solution.size();
+        int toMutate1 = solution[mutationLoc1];
 
-    if (toMutate1 == 0)
-    {
-        tempSolution[mutationLoc1] = 1;
-        tempSolution[mutationLoc2] = 0;
-    }
-    else
-    {
-        tempSolution[mutationLoc1] = 0;
-        tempSolution[mutationLoc2] = 1;
+        int mutationLoc2 = rand() % solution.size();
+        int toMutate2 = solution[mutationLoc2];
+
+        // If bit-values are the same, try again (must be balanced)
+        while (toMutate2 == toMutate1)
+        {
+            mutationLoc2 = rand() % solution.size();
+            toMutate2 = solution[mutationLoc2];
+        }
+
+        if (toMutate1 == 0)
+        {
+            tempSolution[mutationLoc1] = 1;
+            tempSolution[mutationLoc2] = 0;
+        }
+        else
+        {
+            tempSolution[mutationLoc1] = 0;
+            tempSolution[mutationLoc2] = 1;
+        }
     }
     
     return tempSolution;
@@ -309,7 +313,7 @@ std::vector<vector<double> > multiStartLocalSearch(std::vector<Node> nodeList, i
     return combinedResults;
 }
 
-std::vector<vector<double> > iterativeLocalSearch(std::vector<Node> nodeList, int iterations)
+std::vector<vector<double> > iterativeLocalSearch(std::vector<Node> nodeList, int iterations, float perturbationRatio)
 {
     std::vector<vector<double> > combinedResults(iterations);
     std::vector<double> cR(2);
@@ -326,7 +330,7 @@ std::vector<vector<double> > iterativeLocalSearch(std::vector<Node> nodeList, in
     {
         begin = std::chrono::steady_clock::now();
 
-        tempSolution = perturbSolution(solution, 0);
+        tempSolution = perturbSolution(solution, perturbationRatio);
         graaf.initializeGraph(nodeList, solution);
 
         // Run one local search
@@ -359,7 +363,12 @@ void writeToFile(std::vector<vector<double> > results, std::string fileName)
 
     for (auto const &r: results)
     {
-        output_file << r[0] << " " << r[1] << endl;
+        for (auto const &v: r)
+        {
+            output_file << v << " ";
+        }
+        
+        output_file << endl;
     }
 
     output_file.close();
@@ -372,12 +381,12 @@ int main()
     std::vector<Node> nodeList = parseGraph();
     
     // Run MLS
-    // std::vector<vector<double> > results = multiStartLocalSearch(nodeList, 3);
-    // writeToFile(results, "MLS.txt");
+    std::vector<vector<double> > results = multiStartLocalSearch(nodeList, 10000);
+    writeToFile(results, "MLS.txt");
 
     // Run ILS
-    std::vector<vector<double> > results = iterativeLocalSearch(nodeList, 3);
-    writeToFile(results, "ILS.txt");
+    // std::vector<vector<double> > results = iterativeLocalSearch(nodeList, 100, 0.05);
+    // writeToFile(results, "ILS.txt");
 
 } 
 
