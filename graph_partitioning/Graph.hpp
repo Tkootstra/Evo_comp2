@@ -16,6 +16,7 @@ class Graph
 {
     public:
     // Functions
+    void initializeGraph(std::vector<Node> nodeList, vector<int> solution);
     int getPartitionSize(int partition);
     void countConnections(int partition);
 
@@ -23,22 +24,25 @@ class Graph
     int cutStatePartition0;  // The amount of connections between partition 0 and 1
 
     std::vector<Node> Nodes;
-    std::vector<int> gains;
     
-    Graph(std::vector<Node> nodeList, vector<int> solution)
-    {
-        for (size_t i = 0; i < nodeList.size(); i++)
-        {
-            int idx = solution[i];
-            nodeList[i].setPartition(idx);  
-        }
-
-        Nodes = nodeList;      
+    Graph()
+    {   
     }
 
 };
 
 #endif
+
+void Graph::initializeGraph(std::vector<Node> nodeList, vector<int> solution)
+{
+    for (size_t i = 0; i < nodeList.size(); i++)
+    {
+        int idx = solution[i];
+        nodeList[i].setPartition(idx);  
+    }
+
+    Nodes = nodeList;   
+}
 
 int Graph::getPartitionSize(int partition)
 {
@@ -58,17 +62,16 @@ int Graph::getPartitionSize(int partition)
 void Graph::countConnections(int partition)
 // for each node in the graph, if the node belongs to partition 0, 
 // check  all connections from this node and check if they belong to partition 1.
-// if so, 
 {
     int totalValue = 0;
     std::list<int> connections;
 
-    for (Node checkNode: Nodes)
+    for (Node const &checkNode: Nodes)
     {
         if (checkNode.belongsToWhichPartition == partition)
         {
             connections = checkNode.ConnectionLocations;
-            for (int index:connections)
+            for (int const &index: connections)
             {
                 if (Nodes[index].belongsToWhichPartition != partition)
                 {

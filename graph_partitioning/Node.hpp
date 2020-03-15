@@ -13,28 +13,31 @@ class Node
 {
     public:
     // Functions
+    void initializeNode(int indexLoc, int nCon, std::list<int> ConLocations);
     void setPartition(int partitionNumber);
     void flipPartition();
 
     // Variables
-    int indexLocation;
     std::list<int> ConnectionLocations;
-    int numberOfConnections;
-    int belongsToWhichPartition;
+    int indexLocation, numberOfConnections, belongsToWhichPartition;
 
     // For comparing Nodes
     bool operator == (const Node& s) const { return indexLocation == s.indexLocation; }
     bool operator != (const Node& s) const { return !operator==(s); }
     
-    Node(int indexLoc, int nCon, std::list<int> ConLocations)
+    Node()
     {   
-        indexLocation = indexLoc;
-        ConnectionLocations = ConLocations;
-        numberOfConnections = nCon;
     }
 };
 
 #endif 
+
+void Node::initializeNode(int indexLoc, int nCon, std::list<int> ConLocations)
+{
+    indexLocation = indexLoc;
+    ConnectionLocations = ConLocations;
+    numberOfConnections = nCon;
+}
 
 void Node::setPartition(int partitionNumber)
 {

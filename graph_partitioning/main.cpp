@@ -15,6 +15,8 @@
 #include <random>
 #include <map>
 #include <algorithm>
+#include <chrono>
+#include <time.h>
 
 // c++ -std=c++17 -stdlib=libc++ main.cpp -o prog 
 // ./prog
@@ -51,7 +53,8 @@ std::vector<Node> parseGraph()
             otherLocs.push_back(loc);    
         }
         // make new nodes for each input line
-        Node newNode = Node(vertexNumber, nConnections, otherLocs);
+        Node newNode;
+        newNode.initializeNode(vertexNumber, nConnections, otherLocs);
         nodeList.push_back(newNode);
     }
 
@@ -62,6 +65,9 @@ std::vector<int> makeRandomSolution(int stringLength)
 {
     bool equal = false;
     std::vector<int> solution(stringLength);
+
+    srand(time(NULL));
+
     while (!equal)
     {
         for (size_t j = 0; j < stringLength; j++)
@@ -94,23 +100,26 @@ Bucket computeGain(Graph graph, Bucket currentBucket)
     int newCutState;
 
     int gain;
+    Graph tempGraph;
+    Node currentNode, current;
 
+    // Count the current score
     graph.countConnections(0); 
     int originalCutState = graph.cutStatePartition0;
     currentBucket.currentSolution = originalCutState;
     
     for (size_t i = 0; i < graph.Nodes.size(); i++)
     {
-        Node current = graph.Nodes[i];
+        currentNode = graph.Nodes[i];
         fixedNodes = currentBucket.fixedNodes;
 
         // Check if node not in fixedNodes, otherwise skip – no need to update gain
-        notInFixed = std::find(fixedNodes.begin(), fixedNodes.end(), current.indexLocation) == fixedNodes.end();
+        notInFixed = std::find(fixedNodes.begin(), fixedNodes.end(), currentNode.indexLocation) == fixedNodes.end();
 
         if (notInFixed)
         {
-            Graph tempGraph = graph;
-            Node current = tempGraph.Nodes[i];
+            tempGraph = graph;
+            current = tempGraph.Nodes[i];
             whichPart = current.belongsToWhichPartition;
             
             tempGraph.Nodes[current.indexLocation].flipPartition();
@@ -136,7 +145,10 @@ Bucket updateGain(Graph graph, Bucket currentBucket, std::list<int> nodeConnecti
     int newCutState;
 
     int gain;
+    Graph tempGraph;
+    Node currentNode, current;
 
+    // Count current score
     graph.countConnections(0); 
     int originalCutState = graph.cutStatePartition0;
     currentBucket.currentSolution = originalCutState;
@@ -144,15 +156,15 @@ Bucket updateGain(Graph graph, Bucket currentBucket, std::list<int> nodeConnecti
     // Only loop through necessary connections
     for (auto const &i: nodeConnections)
     {
-        Node current = graph.Nodes[i - 1];
+        currentNode = graph.Nodes[i - 1];
         fixedNodes = currentBucket.fixedNodes;
 
-        notInFixed = std::find(fixedNodes.begin(), fixedNodes.end(), current.indexLocation) == fixedNodes.end();
+        notInFixed = std::find(fixedNodes.begin(), fixedNodes.end(), currentNode.indexLocation) == fixedNodes.end();
 
         if (notInFixed)
         {
-            Graph tempGraph = graph;
-            Node current = tempGraph.Nodes[i - 1];
+            tempGraph = graph;
+            current = tempGraph.Nodes[i - 1];
             whichPart = current.belongsToWhichPartition;
             
             tempGraph.Nodes[current.indexLocation].flipPartition();
@@ -190,15 +202,14 @@ int singleFidMath(Graph g)
     int nodeToChangeIndex0;
     int nodeToChangeIndex1;
 
-    // std::cout << "b0size: " << b0size << endl;
-    // std::cout << "Current solution: " << score << endl;
-
     // Do until both buckets are empty:
         // Move node with highest gain from 0 to 1
             // Remove node from bucket (the node becomes LOCKED)
         // Do same from 1 to 0, otherwise solution isn't valid
 
         // Recompute the gain for all neighboring nodes of the nodes that have been moved
+
+    int updateFunctions = 0;
 
     while (b0size > 0 && b1size > 0) 
     {
@@ -216,6 +227,10 @@ int singleFidMath(Graph g)
         results = updateGain(g, results, nodeToChange0.ConnectionLocations);
         results = updateGain(g, results, nodeToChange1.ConnectionLocations);
 
+        updateFunctions = updateFunctions + nodeToChange0.numberOfConnections;
+        updateFunctions = updateFunctions + nodeToChange1.numberOfConnections;
+        // std::cout << "0: " << nodeToChange0.numberOfConnections << "| 1: " << nodeToChange1.numberOfConnections << endl;
+
         score = results.currentSolution;
         
         // Update metadata
@@ -223,42 +238,67 @@ int singleFidMath(Graph g)
         b1max = results.bucket1maxPointer;
         b0size = results.bucket0Size;
         b1size = results.bucket1Size;
-
-        // std::cout << "b0: " << b0size << " | b1: " << b1size << endl;
-        // std::cout << "Current solution: " << score << endl;
-        // std::cout << "Pointer0: " << b0max << " | Pointer1: " << b1max << endl << endl;
     }
 
     return score;
 
 }
 
-std::vector<int> multipleFidMath(std::vector<Node> nodeList, int iterations)
+std::vector<vector<double> > multiStartLocalSearch(std::vector<Node> nodeList, int iterations)
 {
-    std::vector<int> results(iterations);
+    std::vector<vector<double> > combinedResults(iterations);
+    std::vector<double> cR(2);
     std::vector<int> solution;
+    
     int r;
+    std::chrono::steady_clock::time_point begin, end;
+    Graph graaf;
 
     for (size_t i = 0; i < iterations; i++)
     {
+        begin = std::chrono::steady_clock::now();
         solution = makeRandomSolution(500);
-        Graph graaf = Graph(nodeList, solution);
+        graaf.initializeGraph(nodeList, solution);
 
+        // Run one local search
         r = singleFidMath(graaf);
-        results[i] = r;
 
-        std::cout << "Iteration " << i + 1 << ", Score " << r << endl;
+        // Calculate elapsed time
+        end = std::chrono::steady_clock::now();
+        std::chrono::duration<double> dur = (end - begin);
+
+        cR[0] = r;
+        cR[1] = dur.count();
+        combinedResults[i] = cR;
+        
+        std::cout << "Iteration " << i + 1 << ": Score " << r << ". Time: " << cR[1] << "s." << endl;
     }
 
-    return results;
+    return combinedResults;
+}
+
+void writeToFile(std::vector<vector<double> > results, std::string fileName)
+{
+    std::ofstream output_file(fileName);
+    output_file << "Score Time" << endl;
+
+    for (auto const &r: results)
+    {
+        output_file << r[0] << " " << r[1] << endl;
+    }
+
+    output_file.close();
 }
 
 int main()
-{   // parse nodes from txt file
-    std::vector<Node> NodeList = parseGraph();
+{   // https://www.codeproject.com/Articles/1271904/Programming-Concurrency-in-Cplusplus-Part-1
+    
+    // parse nodes from txt file
+    std::vector<Node> nodeList = parseGraph();
     
     // Run multiple solutions
-    std::vector<int> results = multipleFidMath(NodeList, 10);
+    std::vector<vector<double> > results = multiStartLocalSearch(nodeList, 3);
+    writeToFile(results, "MLS.txt");
 
 } 
 

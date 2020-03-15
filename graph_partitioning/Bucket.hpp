@@ -22,12 +22,9 @@ class Bucket
     Node popFromBucketKey(int partition, int key);
 
     // Variables
-    std::map<int, std::list<Node> > bucket0;
-    std::map<int, std::list<Node> > bucket1;
-    int bucket0maxPointer;
-    int bucket1maxPointer;
-    int bucket0Size;
-    int bucket1Size;
+    std::map<int, std::list<Node> > bucket0, bucket1;
+    int bucket0maxPointer, bucket1maxPointer;
+    int bucket0Size, bucket1Size;
     
     std::list<int> fixedNodes;
     int currentSolution;
@@ -71,7 +68,6 @@ void Bucket::addToBucket(int partition, int key, Node item)
 
 void Bucket::updateBucket(int partition, int key, Node item)
 {
-    // cout << "Updating bucket... ";
     // 'Yank' item from one list to another
     if (partition == 0)
     {
@@ -88,7 +84,6 @@ void Bucket::updateBucket(int partition, int key, Node item)
                     nodeList.remove(i);
                     k.second = nodeList;
                     addToBucket(partition, key, item);
-                    // std::cout << "now in bucket " << key << endl;
                     return;
                 }
             }
@@ -107,7 +102,6 @@ void Bucket::updateBucket(int partition, int key, Node item)
                     nodeList.remove(i);
                     k.second = nodeList;
                     addToBucket(partition, key, item);
-                    // std::cout << "now in bucket " << key << endl;
                     return;
                 }
             }
