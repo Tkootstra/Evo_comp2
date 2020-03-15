@@ -92,6 +92,37 @@ std::list<vector<int> > makeMultipleRandomSolutions(int stringLength, int amount
     return allSolutions;
 }
 
+std::vector<int> perturbSolution(std::vector<int> solution, float ratio)
+{
+    std::vector<int> tempSolution = solution;
+    
+    int mutationLoc1 = rand() % solution.size();
+    int toMutate1 = solution[mutationLoc1];
+
+    int mutationLoc2 = rand() % solution.size();
+    int toMutate2 = solution[mutationLoc2];
+
+    // If bit-values are the same, try again (must be balanced)
+    while (toMutate2 == toMutate1)
+    {
+        mutationLoc2 = rand() % solution.size();
+        toMutate2 = solution[mutationLoc2];
+    }
+
+    if (toMutate1 == 0)
+    {
+        tempSolution[mutationLoc1] = 1;
+        tempSolution[mutationLoc2] = 0;
+    }
+    else
+    {
+        tempSolution[mutationLoc1] = 0;
+        tempSolution[mutationLoc2] = 1;
+    }
+    
+    return tempSolution;
+}
+
 Bucket computeGain(Graph graph, Bucket currentBucket)
 { //TODO: deze methode moet bij de bucket class horen <- Why?
     std::list<int> fixedNodes;
@@ -252,6 +283,7 @@ std::vector<vector<double> > multiStartLocalSearch(std::vector<Node> nodeList, i
     
     int r;
     std::chrono::steady_clock::time_point begin, end;
+    std::chrono::duration<double> dur;
     Graph graaf;
 
     for (size_t i = 0; i < iterations; i++)
@@ -265,13 +297,56 @@ std::vector<vector<double> > multiStartLocalSearch(std::vector<Node> nodeList, i
 
         // Calculate elapsed time
         end = std::chrono::steady_clock::now();
-        std::chrono::duration<double> dur = (end - begin);
+        dur = (end - begin);
 
         cR[0] = r;
         cR[1] = dur.count();
         combinedResults[i] = cR;
         
-        std::cout << "Iteration " << i + 1 << ": Score " << r << ". Time: " << cR[1] << "s." << endl;
+        std::cout << "Iteration " << i + 1 << ": Score " << r << " | Time: " << cR[1] << "s." << endl;
+    }
+
+    return combinedResults;
+}
+
+std::vector<vector<double> > iterativeLocalSearch(std::vector<Node> nodeList, int iterations)
+{
+    std::vector<vector<double> > combinedResults(iterations);
+    std::vector<double> cR(2);
+    std::vector<int> solution = makeRandomSolution(500);
+    std::vector<int> tempSolution = solution;
+    
+    int prevResult = 0;
+    int thisResult;
+    std::chrono::steady_clock::time_point begin, end;
+    std::chrono::duration<double> dur;
+    Graph graaf;
+
+    for (size_t i = 0; i < iterations; i++)
+    {
+        begin = std::chrono::steady_clock::now();
+
+        tempSolution = perturbSolution(solution, 0);
+        graaf.initializeGraph(nodeList, solution);
+
+        // Run one local search
+        thisResult = singleFidMath(graaf);
+
+        if (thisResult > prevResult)
+        {
+            solution = tempSolution;
+            prevResult = thisResult;
+        }
+
+        // Calculate elapsed time
+        end = std::chrono::steady_clock::now();
+        dur = (end - begin);
+
+        cR[0] = thisResult;
+        cR[1] = dur.count();
+        combinedResults[i] = cR;
+        
+        std::cout << "Iteration " << i + 1 << ": Score " << thisResult << " | Time: " << cR[1] << "s." << endl;
     }
 
     return combinedResults;
@@ -296,9 +371,13 @@ int main()
     // parse nodes from txt file
     std::vector<Node> nodeList = parseGraph();
     
-    // Run multiple solutions
-    std::vector<vector<double> > results = multiStartLocalSearch(nodeList, 3);
-    writeToFile(results, "MLS.txt");
+    // Run MLS
+    // std::vector<vector<double> > results = multiStartLocalSearch(nodeList, 3);
+    // writeToFile(results, "MLS.txt");
+
+    // Run ILS
+    std::vector<vector<double> > results = iterativeLocalSearch(nodeList, 3);
+    writeToFile(results, "ILS.txt");
 
 } 
 
