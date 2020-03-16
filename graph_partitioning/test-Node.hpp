@@ -13,7 +13,7 @@ class Node
 {
     public:
     // Functions
-    void initializeNode(int indexLoc, int nCon, const std::list<int> ConLocations);
+    void initializeNode(int indexLoc, int nCon, std::list<int> ConLocations);
     void setPartition(int partitionNumber);
     void flipPartition();
 
@@ -32,14 +32,14 @@ class Node
 
 #endif 
 
-void Node::initializeNode(int indexLoc, int nCon, const std::list<int> ConLocations)
+void Node::initializeNode(const int indexLoc, const int nCon, const std::list<int> ConLocations)
 {
     indexLocation = indexLoc;
     ConnectionLocations = ConLocations;
     numberOfConnections = nCon;
 }
 
-void Node::setPartition(int partitionNumber)
+void Node::setPartition(const int partitionNumber)
 {
     belongsToWhichPartition = partitionNumber;
 }

@@ -1,7 +1,8 @@
 // Graph.hpp
 
 // Custom classes
-#include "Node.hpp"
+#include "test-Node.hpp"
+#include "test-Edge.hpp"
 
 // Base libraries
 #include <vector>
@@ -16,8 +17,8 @@ class Graph
 {
     public:
     // Functions
-    void initializeGraph(std::vector<Node> nodeList, const vector<int> solution);
-    int getPartitionSize(int partition) const;
+    void initializeGraph(std::vector<Node> nodeList, vector<int> solution);
+    int getPartitionSize(int partition);
     int countConnections(int partition) const;
     int countSingleCellConnections(const int nodeIndex) const;
 
@@ -43,7 +44,7 @@ void Graph::initializeGraph(std::vector<Node> nodeList, const vector<int> soluti
     Nodes = nodeList;   
 }
 
-int Graph::getPartitionSize(const int partition) const
+int Graph::getPartitionSize(const int partition)
 {
     int partitionSize = 0;
 

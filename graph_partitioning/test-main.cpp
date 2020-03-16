@@ -2,7 +2,8 @@
 // Custom classes
 // #include "Node.hpp"   <- Don't include because they're included in Bucket.hpp
 // #incluse "Graph.hpp"  <-|
-#include "Bucket.hpp"
+// #include "test-Edge.hpp"
+#include "test-Bucket.hpp"
 
 // Base libraries
 #include <iostream>
@@ -28,11 +29,9 @@ std::vector<Node> parseGraph()
     std::ifstream dataFile("Graph500.txt");
     std::string line;
     std::vector<Node> nodeList;
-    int maxcon = 0;
 
     while (std::getline(dataFile, line))
     {
-        
         // parse all info from .txt file line by line
         std::istringstream iss(line);
         std::vector<std::string> singleSplittedLine((std::istream_iterator<std::string>(iss)),
@@ -40,13 +39,9 @@ std::vector<Node> parseGraph()
 
         int vertexNumber = std::stoi(singleSplittedLine[0]);
         int nConnections = std::stoi(singleSplittedLine[2]);
-        if (nConnections > maxcon)
-        {
-            maxcon = nConnections;
-        }
-        std::list<int> otherLocs; 
 
         // parse all other indice locations
+        std::list<int> otherLocs;
         for (size_t i = 3; i < singleSplittedLine.size(); i++)
         {   
             int loc = std::stoi(singleSplittedLine[i]);
@@ -61,7 +56,7 @@ std::vector<Node> parseGraph()
     return nodeList;
 }
 
-std::vector<int> makeRandomSolution(int stringLength)
+std::vector<int> makeRandomSolution(const int stringLength)
 {
     bool equal = false;
     std::vector<int> solution(stringLength);
@@ -82,7 +77,7 @@ std::vector<int> makeRandomSolution(int stringLength)
     return solution;
 }
 
-std::list<vector<int> > makeMultipleRandomSolutions(int stringLength, int amount)
+std::list<vector<int> > makeMultipleRandomSolutions(const int stringLength, const int amount)
 {
     std::list<vector<int> > allSolutions;
     for (size_t i = 0; i < amount; i++)
@@ -92,7 +87,7 @@ std::list<vector<int> > makeMultipleRandomSolutions(int stringLength, int amount
     return allSolutions;
 }
 
-std::vector<int> perturbSolution(std::vector<int> solution, float ratio)
+std::vector<int> perturbSolution(std::vector<int> solution, const float ratio)
 {
     std::vector<int> tempSolution = solution;
     int amountToPerturb = (int)(ratio * solution.size());
@@ -207,6 +202,9 @@ Bucket updateGain(const Graph graph, Bucket currentBucket, const std::list<int> 
             whichPart = current.belongsToWhichPartition;
             
             tempGraph.Nodes[current.indexLocation].flipPartition();
+            // newCutState = tempGraph.countConnections(0);
+            
+            // gain = currentScore - newCutState;
             gain = tempGraph.countSingleCellConnections(current.indexLocation);
             
             currentBucket.updateBucket(whichPart, gain, current);
@@ -219,8 +217,8 @@ std::pair<int, std::vector<int> > singleFMrun(Graph g)
 {   
     std::list<int> fixedNodes;
 
-    std::map<int, std::list<Node> > bucket0;
-    std::map<int, std::list<Node> > bucket1;
+    std::vector<std::list<Node> > bucket0;
+    std::vector<std::list<Node> > bucket1;
 
     Bucket results = Bucket(bucket0, bucket1, fixedNodes, g);
     results = computeGain(g, results);
@@ -283,10 +281,9 @@ std::pair<int, std::vector<int> > singleFMrun(Graph g)
     std::pair<int, std::vector<int> > returnPair = std::make_pair(bestScore, bestScoreSolution);
     return returnPair;
 
-
 }
 
-std::vector<vector<double> > multiStartLocalSearch(const std::vector<Node> nodeList, int iterations)
+std::vector<vector<double> > multiStartLocalSearch(const std::vector<Node> nodeList, const int iterations)
 {
     std::vector<vector<double> > combinedResults(iterations);
     std::vector<double> cR(2);
@@ -320,7 +317,7 @@ std::vector<vector<double> > multiStartLocalSearch(const std::vector<Node> nodeL
     return combinedResults;
 }
 
-std::vector<vector<double> > iterativeLocalSearch(const std::vector<Node> nodeList, int iterations, float perturbationRatio)
+std::vector<vector<double> > iterativeLocalSearch(std::vector<Node> nodeList, const int iterations, const float perturbationRatio)
 {
     std::vector<vector<double> > combinedResults(iterations);
     std::vector<double> cR(2);
@@ -399,8 +396,21 @@ int main()
     writeToFile(resultsMLS, "MLS.txt");
 
     // Run ILS
-    std::vector<vector<double> > resultsILS = iterativeLocalSearch(nodeList, runs, 0.05);
-    writeToFile(resultsILS, "ILS.txt");
+    // std::vector<vector<double> > resultsILS = iterativeLocalSearch(nodeList, runs, 0.05);
+    // writeToFile(resultsILS, "ILS.txt");
+
+    // std::array<std::list<int>, 32> buck;
+    
+    // for (size_t i = 0; i < buck.size(); i++)
+    // {   
+    //     std::cout << i << ", ";
+    //     buck[i].push_back(1);
+    // }
+
+    // std::cout << endl;
+
+
+
 
 } 
 
