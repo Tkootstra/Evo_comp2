@@ -16,7 +16,6 @@
 #include <map>
 #include <algorithm>
 #include <chrono>
-#include <time.h>
 
 // c++ -std=c++17 -stdlib=libc++ main.cpp -o prog 
 // ./prog
@@ -24,7 +23,7 @@
 using namespace std;
 
 std::vector<Node> parseGraph()
-{
+{// Parses the Graph500.txt file and returns a vector of Nodes
     std::ifstream dataFile("Graph500.txt");
     std::string line;
     std::vector<Node> nodeList;
@@ -62,7 +61,7 @@ std::vector<Node> parseGraph()
 }
 
 std::vector<int> makeRandomSolution(int stringLength)
-{
+{// Creates random solution with equal 0s and 1s
     bool equal = false;
     std::vector<int> solution(stringLength);
 
@@ -83,7 +82,7 @@ std::vector<int> makeRandomSolution(int stringLength)
 }
 
 std::list<vector<int> > makeMultipleRandomSolutions(int stringLength, int amount)
-{
+{ // Calls makeRandomSolution 'amount' times
     std::list<vector<int> > allSolutions;
     for (size_t i = 0; i < amount; i++)
     {
@@ -92,8 +91,8 @@ std::list<vector<int> > makeMultipleRandomSolutions(int stringLength, int amount
     return allSolutions;
 }
 
-std::vector<int> perturbSolution(std::vector<int> solution, float ratio)
-{
+std::vector<int> perturbSolution(std::vector<int> solution, const float ratio)
+{ // Perturb/mutate solution by a certain ratio
     std::vector<int> tempSolution = solution;
     int amountToPerturb = (int)(ratio * solution.size());
     
@@ -128,7 +127,7 @@ std::vector<int> perturbSolution(std::vector<int> solution, float ratio)
 }
 
 std::vector<int> getBestSolution(const Graph g)
-{
+{ // Retrieve the vector representation of the partitioning of graph g
     std::vector<int> solution(g.Nodes.size());
 
     for (size_t i = 0; i < g.Nodes.size(); i++)
@@ -140,40 +139,38 @@ std::vector<int> getBestSolution(const Graph g)
 }
 
 Bucket computeGain(const Graph graph, Bucket currentBucket)
-{ //TODO: deze methode moet bij de bucket class horen <- Why?
+{ // Compute gain for all free nodes
     std::list<int> fixedNodes;
-    int whichPart;
+    Graph tempGraph;
+    Node current;
+
     bool notInFixed;
     int newCutState;
-
     int gain;
-    Graph tempGraph;
-    Node currentNode, current;
 
-    // Count the current score
-    int originalCutState = graph.countConnections(0); ;
+    // Get the current score
+    int originalCutState = graph.countConnections(); ;
     currentBucket.currentSolution = originalCutState;
     
     for (size_t i = 0; i < graph.Nodes.size(); i++)
     {
-        currentNode = graph.Nodes[i];
+        // Check if node not in fixedNodes, otherwise skip
         fixedNodes = currentBucket.fixedNodes;
-
-        // Check if node not in fixedNodes, otherwise skip – no need to update gain
-        notInFixed = std::find(fixedNodes.begin(), fixedNodes.end(), currentNode.indexLocation) == fixedNodes.end();
+        notInFixed = std::find(fixedNodes.begin(), fixedNodes.end(), graph.Nodes[i].indexLocation) == fixedNodes.end();
 
         if (notInFixed)
         {
+            // Create a temporary graph to manipulate
             tempGraph = graph;
             current = tempGraph.Nodes[i];
-            whichPart = current.belongsToWhichPartition;
             
+            // Flip partition and retrieve how it affects the gain
             tempGraph.Nodes[current.indexLocation].flipPartition();
-            newCutState = tempGraph.countConnections(0);
+            newCutState = tempGraph.countConnections();
             
+            // Calculate gain and adjust bucket accordingly
             gain = originalCutState - newCutState;
-            
-            currentBucket.addToBucket(whichPart, gain, current);
+            currentBucket.addToBucket(current.belongsToWhichPartition, gain, current);
         }    
     }
 
@@ -181,62 +178,57 @@ Bucket computeGain(const Graph graph, Bucket currentBucket)
 }
 
 Bucket updateGain(const Graph graph, Bucket currentBucket, const std::list<int> nodeConnections, const int currentScore)
-{   // Do the same as computeGain but only for certain nodes and run 'updateBucket'
+{ // Do the same as computeGain but only for certain nodes and run 'updateBucket'
     // instead of 'addToBucket'
     std::list<int> fixedNodes;
-    int whichPart;
-    bool notInFixed;
-    int newCutState;
-
-    int gain;
     Graph tempGraph;
-    Node currentNode, current;
+    Node current;
+    
+    bool notInFixed;
+    int gain;
 
     // Only loop through necessary connections
     for (auto const &i: nodeConnections)
     {
-        currentNode = graph.Nodes[i - 1];
+        // Check if current node i is not in fixedNodes
         fixedNodes = currentBucket.fixedNodes;
-
-        notInFixed = std::find(fixedNodes.begin(), fixedNodes.end(), currentNode.indexLocation) == fixedNodes.end();
+        notInFixed = std::find(fixedNodes.begin(), fixedNodes.end(), graph.Nodes[i - 1].indexLocation) == fixedNodes.end();
 
         if (notInFixed)
         {
+            // Create a temporary graph to manipulate
             tempGraph = graph;
             current = tempGraph.Nodes[i - 1];
-            whichPart = current.belongsToWhichPartition;
             
+            // Flip partition and retrieve how it affects the gains
             tempGraph.Nodes[current.indexLocation].flipPartition();
             gain = tempGraph.countSingleCellConnections(current.indexLocation);
             
-            currentBucket.updateBucket(whichPart, gain, current);
+            // Update bucket to reflect gain
+            currentBucket.updateBucket(current.belongsToWhichPartition, gain, current);
         } 
     }
     return currentBucket;
 }
 
 std::pair<int, std::vector<int> > singleFMrun(Graph g)
-{   
+{ // Run a single FM pass (250 moves back and forth). Returns the best solution. 
+    // Some pre-work for initializing the Bucket
     std::list<int> fixedNodes;
-
     std::map<int, std::list<Node> > bucket0;
     std::map<int, std::list<Node> > bucket1;
-
-    Bucket results = Bucket(bucket0, bucket1, fixedNodes, g);
-    results = computeGain(g, results);
     
-    // Make buckets and pointers
-    int b0max = results.bucket0maxPointer;
-    int b1max = results.bucket1maxPointer;
+    // Create bucket and get size of partition 0 (1 is equally large)
+    Bucket results = Bucket(bucket0, bucket1, fixedNodes, g);
     int b0size = results.bucket0Size;
-    int b1size = results.bucket1Size;
-
+    
+    // Compute the initial score and gains
+    results = computeGain(g, results);
     int score = results.currentSolution;
+    
+    // Keep track of the best score and accompanying graph
     int bestScore = score;
     Graph bestScoreGraph = g;
-
-    int nodeToChangeIndex0;
-    int nodeToChangeIndex1;
 
     // Do until both buckets are empty:
         // Move node with highest gain from 0 to 1
@@ -245,20 +237,18 @@ std::pair<int, std::vector<int> > singleFMrun(Graph g)
 
         // Recompute the gain for all neighboring nodes of the nodes that have been moved
 
-    while (b0size > 0 && b1size > 0) 
+    while (b0size > 0) 
     {
         // Move node from 0 to 1
-        Node nodeToChange0 = results.popFromBucketKey(0, b0max);
-        nodeToChangeIndex0 = nodeToChange0.indexLocation;
-        g.Nodes[nodeToChangeIndex0].flipPartition();
+        Node nodeToChange0 = results.popFromBucketKey(0);
+        g.Nodes[nodeToChange0.indexLocation].flipPartition();
 
         // Move node from 1 to 0
-        Node nodeToChange1 = results.popFromBucketKey(1, b1max);
-        nodeToChangeIndex1 = nodeToChange1.indexLocation;
-        g.Nodes[nodeToChangeIndex1].flipPartition();
+        Node nodeToChange1 = results.popFromBucketKey(1);
+        g.Nodes[nodeToChange1.indexLocation].flipPartition();
 
         // Count the score again
-        score = g.countConnections(0);
+        score = g.countConnections();
         results.currentSolution = score;
 
         // We now have a new valid partition; update gains for neighbors
@@ -266,50 +256,46 @@ std::pair<int, std::vector<int> > singleFMrun(Graph g)
         results = updateGain(g, results, nodeToChange1.ConnectionLocations, score);
         
         // Update metadata
-        b0max = results.bucket0maxPointer;
-        b1max = results.bucket1maxPointer;
         b0size = results.bucket0Size;
-        b1size = results.bucket1Size;
 
+        // Keep track of best score
         if (score < bestScore)
         {
             bestScore = score;
             bestScoreGraph = g;
         }
-
     }
 
+    // Get the solution that matches the graph with the best score
     std::vector<int> bestScoreSolution = getBestSolution(bestScoreGraph);
     std::pair<int, std::vector<int> > returnPair = std::make_pair(bestScore, bestScoreSolution);
+    
     return returnPair;
-
-
 }
 
 std::vector<vector<double> > multiStartLocalSearch(const std::vector<Node> nodeList, int iterations)
-{
-    std::vector<vector<double> > combinedResults(iterations);
+{ // Run a simple MLS. Just makes a random solution every time.
     std::vector<double> cR(2);
-    std::vector<int> solution;
+    std::vector<vector<double> > combinedResults(iterations);
     
     std::pair<int, std::vector<int> > r;
-    std::chrono::steady_clock::time_point begin, end;
+    std::chrono::steady_clock::time_point begin;
     std::chrono::duration<double> dur;
     Graph graaf;
 
     for (size_t i = 0; i < iterations; i++)
     {
+        // Start timer and init graph
         begin = std::chrono::steady_clock::now();
-        solution = makeRandomSolution(500);
-        graaf.initializeGraph(nodeList, solution);
+        graaf.initializeGraph(nodeList, makeRandomSolution(500));
 
         // Run one local search
         r = singleFMrun(graaf);
 
         // Calculate elapsed time
-        end = std::chrono::steady_clock::now();
-        dur = (end - begin);
+        dur = (std::chrono::steady_clock::now() - begin);
 
+        // Save results
         cR[0] = r.first;
         cR[1] = dur.count();
         combinedResults[i] = cR;
@@ -321,18 +307,21 @@ std::vector<vector<double> > multiStartLocalSearch(const std::vector<Node> nodeL
 }
 
 std::vector<vector<double> > iterativeLocalSearch(const std::vector<Node> nodeList, int iterations, float perturbationRatio)
-{
-    std::vector<vector<double> > combinedResults(iterations);
+{ // Run ILS. Mutates a solution and carries on if better, reverts to previous if not.
     std::vector<double> cR(2);
-    std::vector<int> solution = makeRandomSolution(500);
-    std::vector<int> tempSolution = solution;
+    std::vector<vector<double> > combinedResults(iterations);
     
+    // Create a random solution
+    std::vector<int> solution = makeRandomSolution(500);
+    std::vector<int> tempSolution;
+    
+    // Keep track of results
     std::pair<int, std::vector<int> > prevResultPair;
     std::pair<int, std::vector<int> > thisResultPair;
     int prevResult = 0;
     int thisResult;
     
-    std::chrono::steady_clock::time_point begin, end;
+    std::chrono::steady_clock::time_point begin;
     std::chrono::duration<double> dur;
     Graph graaf;
 
@@ -340,6 +329,7 @@ std::vector<vector<double> > iterativeLocalSearch(const std::vector<Node> nodeLi
     {
         begin = std::chrono::steady_clock::now();
 
+        // Perturb the solution and create a graph with it
         tempSolution = perturbSolution(solution, perturbationRatio);
         graaf.initializeGraph(nodeList, solution);
 
@@ -347,7 +337,8 @@ std::vector<vector<double> > iterativeLocalSearch(const std::vector<Node> nodeLi
         thisResultPair = singleFMrun(graaf);
         thisResult = thisResultPair.first;
 
-        // If this result is better (lower score), go from there
+        // If this result is better (lower score), the new solution becomes 
+        // our optimal result from this pass
         if (thisResult < prevResult)
         {
             solution = thisResultPair.second;
@@ -355,9 +346,9 @@ std::vector<vector<double> > iterativeLocalSearch(const std::vector<Node> nodeLi
         }
 
         // Calculate elapsed time
-        end = std::chrono::steady_clock::now();
-        dur = (end - begin);
+        dur = (std::chrono::steady_clock::now() - begin);
 
+        // Save results
         cR[0] = thisResult;
         cR[1] = dur.count();
         combinedResults[i] = cR;
@@ -369,7 +360,7 @@ std::vector<vector<double> > iterativeLocalSearch(const std::vector<Node> nodeLi
 }
 
 void writeToFile(const std::vector<vector<double> > results, const std::string fileName)
-{
+{ // Write results to .txt
     std::ofstream output_file(fileName);
     output_file << "Score Time" << endl;
 

@@ -17,17 +17,13 @@ class Graph
     public:
     // Functions
     void initializeGraph(std::vector<Node> nodeList, const vector<int> solution);
-    int getPartitionSize(int partition) const;
-    int countConnections(int partition) const;
+    int countConnections() const;
     int countSingleCellConnections(const int nodeIndex) const;
 
     // Variables
     std::vector<Node> Nodes;
     
-    Graph()
-    {   
-    }
-
+    Graph() {}
 };
 
 #endif
@@ -36,43 +32,25 @@ void Graph::initializeGraph(std::vector<Node> nodeList, const vector<int> soluti
 {
     for (size_t i = 0; i < nodeList.size(); i++)
     {
-        int idx = solution[i];
-        nodeList[i].setPartition(idx);  
+        // Set partition to value of that location in solution
+        nodeList[i].belongsToWhichPartition = solution[i];  
     }
 
     Nodes = nodeList;   
 }
 
-int Graph::getPartitionSize(const int partition) const
-{
-    int partitionSize = 0;
-
-    for (size_t i = 0; i < Nodes.size(); i++)
-    {
-        if (Nodes[i].belongsToWhichPartition == partition) 
-        {
-            partitionSize++;
-        }
-    }
-
-    return partitionSize;
-}
-
-int Graph::countConnections(const int partition) const
-// for each node in the graph, if the node belongs to partition 0, 
-// check  all connections from this node and check if they belong to partition 1.
-{
+int Graph::countConnections() const
+{ // for each node in the graph, if the node belongs to partition 0, 
+  // check  all connections from this node and check if they belong to partition 1.
     int totalValue = 0;
-    std::list<int> connections;
 
     for (Node const &checkNode: Nodes)
     {
-        if (checkNode.belongsToWhichPartition == partition)
+        if (checkNode.belongsToWhichPartition == 0)
         {
-            connections = checkNode.ConnectionLocations;
-            for (int const &index: connections)
+            for (int const &index: checkNode.ConnectionLocations)
             {
-                if (Nodes[index].belongsToWhichPartition != partition)
+                if (Nodes[index].belongsToWhichPartition == 1)
                 {
                     totalValue ++; 
                 }
@@ -87,12 +65,11 @@ int Graph::countSingleCellConnections(const int nodeIndex) const
 {
     int totalValue = 0;
     Node checkNode = Nodes[nodeIndex - 1];
-    int partition = checkNode.belongsToWhichPartition;
-    std::list<int> connections = checkNode.ConnectionLocations;
 
-    for (int const &index: connections)
+    // Loop through node's connections and count which one are in a a different partition
+    for (int const &index: checkNode.ConnectionLocations)
     {
-        if (Nodes[index - 1].belongsToWhichPartition != partition)
+        if (Nodes[index - 1].belongsToWhichPartition != checkNode.belongsToWhichPartition)
         {
             totalValue++;
         }

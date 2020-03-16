@@ -19,7 +19,7 @@ class Bucket
     // Functions
     void addToBucket(int partition, int key, Node item);
     void updateBucket(int partition, int key, Node item);
-    Node popFromBucketKey(int partition, int key);
+    Node popFromBucketKey(int partition);
 
     // Variables
     std::map<int, std::list<Node> > bucket0, bucket1;
@@ -35,8 +35,8 @@ class Bucket
         bucket1 = b1;
         bucket0maxPointer = -999;
         bucket1maxPointer = -999;
-        bucket0Size = g.getPartitionSize(0);
-        bucket1Size = 500 - bucket0Size;
+        bucket0Size = 250;
+        bucket1Size = 250;
 
         fixedNodes = fN;
     }
@@ -71,18 +71,16 @@ void Bucket::updateBucket(int partition, int key, Node item)
     // 'Yank' item from one list to another
     if (partition == 0)
     {
+        // Loop through dict keys
         for (auto &k: bucket0)
         {
-            // k.second gets bucket0[k] list
-            std::list<Node> nodeList = k.second;
-
-            for (auto const &i: nodeList)
+            // Loop through list items (k.second retrieves list)
+            for (auto const &i: k.second)
             {
                 if (i == item)
                 {
                     // If nodes match, remove from this bucket and add to other bucket
-                    nodeList.remove(i);
-                    k.second = nodeList;
+                    k.second.remove(i);
                     addToBucket(partition, key, item);
                     return;
                 }
@@ -93,14 +91,11 @@ void Bucket::updateBucket(int partition, int key, Node item)
     {
         for (auto &k: bucket1)
         {
-            std::list<Node> nodeList = k.second;
-
-            for (auto const &i: nodeList)
+            for (auto const &i: k.second)
             {
                 if (i == item)
                 {
-                    nodeList.remove(i);
-                    k.second = nodeList;
+                    k.second.remove(i);
                     addToBucket(partition, key, item);
                     return;
                 }
@@ -109,15 +104,15 @@ void Bucket::updateBucket(int partition, int key, Node item)
     }
 }
 
-Node Bucket::popFromBucketKey(int partition, int key)
+Node Bucket::popFromBucketKey(int partition)
 {
     if (partition == 0)
     {
-        if (bucket0[key].size() > 0)
+        if (bucket0[bucket0maxPointer].size() > 0)
         {
             // Remove from bucket array
-            Node item = bucket0[key].front();
-            bucket0[key].remove(item);
+            Node item = bucket0[bucket0maxPointer].front();
+            bucket0[bucket0maxPointer].remove(item);
             bucket0Size--;
 
             // Push to fixedNodes list
@@ -128,15 +123,15 @@ Node Bucket::popFromBucketKey(int partition, int key)
         {
             // If bucket is empty, decrease maxPointer and run again
             bucket0maxPointer--;
-            return popFromBucketKey(partition, key - 1);
+            return popFromBucketKey(partition);
         } 
     }
     else 
     {
-        if (bucket1[key].size() > 0)
+        if (bucket1[bucket1maxPointer].size() > 0)
         {
-            Node item = bucket1[key].front();
-            bucket1[key].remove(item);
+            Node item = bucket1[bucket1maxPointer].front();
+            bucket1[bucket1maxPointer].remove(item);
             bucket1Size--;
 
             fixedNodes.push_back(item.indexLocation);
@@ -145,7 +140,7 @@ Node Bucket::popFromBucketKey(int partition, int key)
         else
         {
             bucket1maxPointer--;
-            return popFromBucketKey(partition, key - 1);
+            return popFromBucketKey(partition);
         } 
     }
 }
