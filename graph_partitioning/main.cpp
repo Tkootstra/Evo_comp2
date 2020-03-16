@@ -171,7 +171,7 @@ Bucket computeGain(Graph graph, Bucket currentBucket)
     return currentBucket;    
 }
 
-Bucket updateGain(Graph graph, Bucket currentBucket, std::list<int> nodeConnections)
+Bucket updateGain(Graph graph, Bucket currentBucket, std::list<int> nodeConnections, int currentScore)
 {   // Do the same as computeGain but only for certain nodes and run 'updateBucket'
     // instead of 'addToBucket'
     std::list<int> fixedNodes;
@@ -182,11 +182,6 @@ Bucket updateGain(Graph graph, Bucket currentBucket, std::list<int> nodeConnecti
     int gain;
     Graph tempGraph;
     Node currentNode, current;
-
-    // Count current score
-    graph.countConnections(0); 
-    int originalCutState = graph.cutStatePartition0;
-    currentBucket.currentSolution = originalCutState;
 
     // Only loop through necessary connections
     for (auto const &i: nodeConnections)
@@ -207,7 +202,7 @@ Bucket updateGain(Graph graph, Bucket currentBucket, std::list<int> nodeConnecti
             
             newCutState = tempGraph.cutStatePartition0;
             
-            gain = originalCutState - newCutState;
+            gain = currentScore - newCutState;
             
             currentBucket.updateBucket(whichPart, gain, current);
         } 
@@ -259,8 +254,8 @@ int singleFidMath(Graph g)
         g.Nodes[nodeToChangeIndex1].flipPartition();
 
         // We now have a new valid partition; update gains for neighbors
-        results = updateGain(g, results, nodeToChange0.ConnectionLocations);
-        results = updateGain(g, results, nodeToChange1.ConnectionLocations);
+        results = updateGain(g, results, nodeToChange0.ConnectionLocations, score);
+        results = updateGain(g, results, nodeToChange1.ConnectionLocations, score);
 
         updateFunctions = updateFunctions + nodeToChange0.numberOfConnections;
         updateFunctions = updateFunctions + nodeToChange1.numberOfConnections;
