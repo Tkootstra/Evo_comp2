@@ -210,7 +210,7 @@ Bucket updateGain(Graph graph, Bucket currentBucket, std::list<int> nodeConnecti
     return currentBucket;
 }
 
-int singleFidMath(Graph g)
+int singleFMrun(Graph g)
 {   
     std::list<int> fixedNodes;
 
@@ -239,8 +239,6 @@ int singleFidMath(Graph g)
 
         // Recompute the gain for all neighboring nodes of the nodes that have been moved
 
-    int updateFunctions = 0;
-
     while (b0size > 0 && b1size > 0) 
     {
         // Move node from 0 to 1
@@ -253,15 +251,14 @@ int singleFidMath(Graph g)
         nodeToChangeIndex1 = nodeToChange1.indexLocation;
         g.Nodes[nodeToChangeIndex1].flipPartition();
 
+        // Count the score again
+        g.countConnections(0);
+        score = g.cutStatePartition0;
+        results.currentSolution = score;
+
         // We now have a new valid partition; update gains for neighbors
         results = updateGain(g, results, nodeToChange0.ConnectionLocations, score);
         results = updateGain(g, results, nodeToChange1.ConnectionLocations, score);
-
-        updateFunctions = updateFunctions + nodeToChange0.numberOfConnections;
-        updateFunctions = updateFunctions + nodeToChange1.numberOfConnections;
-        // std::cout << "0: " << nodeToChange0.numberOfConnections << "| 1: " << nodeToChange1.numberOfConnections << endl;
-
-        score = results.currentSolution;
         
         // Update metadata
         b0max = results.bucket0maxPointer;
@@ -292,7 +289,7 @@ std::vector<vector<double> > multiStartLocalSearch(std::vector<Node> nodeList, i
         graaf.initializeGraph(nodeList, solution);
 
         // Run one local search
-        r = singleFidMath(graaf);
+        r = singleFMrun(graaf);
 
         // Calculate elapsed time
         end = std::chrono::steady_clock::now();
@@ -329,7 +326,7 @@ std::vector<vector<double> > iterativeLocalSearch(std::vector<Node> nodeList, in
         graaf.initializeGraph(nodeList, solution);
 
         // Run one local search
-        thisResult = singleFidMath(graaf);
+        thisResult = singleFMrun(graaf);
 
         if (thisResult > prevResult)
         {
@@ -372,16 +369,18 @@ void writeToFile(std::vector<vector<double> > results, std::string fileName)
 int main()
 {   // https://www.codeproject.com/Articles/1271904/Programming-Concurrency-in-Cplusplus-Part-1
     
+    int runs = 1000;
+
     // parse nodes from txt file
     std::vector<Node> nodeList = parseGraph();
     
     // Run MLS
-    std::vector<vector<double> > results = multiStartLocalSearch(nodeList, 10000);
-    writeToFile(results, "MLS.txt");
+    // std::vector<vector<double> > results = multiStartLocalSearch(nodeList, runs);
+    // writeToFile(results, "MLS.txt");
 
     // Run ILS
-    // std::vector<vector<double> > results = iterativeLocalSearch(nodeList, 100, 0.05);
-    // writeToFile(results, "ILS.txt");
+    std::vector<vector<double> > results = iterativeLocalSearch(nodeList, runs, 0.05);
+    writeToFile(results, "ILS.txt");
 
 } 
 
