@@ -18,7 +18,8 @@ class Node
 
     // Variables
     std::list<int> ConnectionLocations;
-    int indexLocation, numberOfConnections, belongsToWhichPartition;
+    int gain, indexLocation, numberOfConnections, belongsToWhichPartition;
+    bool isFixed;
 
     // For comparing Nodes
     bool operator == (const Node& s) const { return indexLocation == s.indexLocation; }
@@ -34,6 +35,8 @@ void Node::initializeNode(int indexLoc, int nCon, const std::list<int> ConLocati
     indexLocation = indexLoc;
     ConnectionLocations = ConLocations;
     numberOfConnections = nCon;
+    isFixed = false;
+    gain = 0;
 }
 
 void Node::flipPartition()
