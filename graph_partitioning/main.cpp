@@ -97,16 +97,16 @@ std::vector<int> perturbSolution(std::vector<int> solution, const float ratio)
     for (size_t i = 0; i < amountToPerturb; i++)
     {
         int mutationLoc1 = rand() % solution.size();
-        int toMutate1 = solution[mutationLoc1];
+        int toMutate1 = tempSolution[mutationLoc1];
 
         int mutationLoc2 = rand() % solution.size();
-        int toMutate2 = solution[mutationLoc2];
+        int toMutate2 = tempSolution[mutationLoc2];
 
         // If bit-values are the same, try again (must be balanced)
         while (toMutate2 == toMutate1)
         {
             mutationLoc2 = rand() % solution.size();
-            toMutate2 = solution[mutationLoc2];
+            toMutate2 = tempSolution[mutationLoc2];
         }
 
         if (toMutate1 == 0)
@@ -327,12 +327,15 @@ std::vector<vector<double> > iterativeLocalSearch(const std::vector<Node> nodeLi
     
     std::cout << "Iteration " << 0 + 1 << ": Score " << firstResult << " | Time: " << cR[1] << "s." << endl;
 
-
     // Perturb inital solution
     tempSolution = perturbSolution(solution, perturbationRatio);
 
     for (size_t i = 1; i < iterations; i++)
     {
+        int sum = 0;
+        for (auto& n:tempSolution) sum += n;
+        std::cout << sum << endl;
+
         begin = std::chrono::steady_clock::now();
 
         // Run second local search
@@ -352,11 +355,9 @@ std::vector<vector<double> > iterativeLocalSearch(const std::vector<Node> nodeLi
         }
         else
         {
-            std::cout << "Perturbing.. " << endl;
             tempSolution = perturbSolution(solution, perturbationRatio);
         }
         
-
         // Calculate elapsed time
         dur = (std::chrono::steady_clock::now() - begin);
 
@@ -403,7 +404,7 @@ int main()
 
     // Run ILS
     std::vector<vector<double> > resultsILS = iterativeLocalSearch(nodeList, runs, 0.1);
-    // writeToFile(resultsILS, "ILS.txt");
+    writeToFile(resultsILS, "ILS.txt");
 
 } 
 
