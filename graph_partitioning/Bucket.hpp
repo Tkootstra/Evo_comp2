@@ -17,8 +17,8 @@ class Bucket
 {
     public:
     // Functions
-    void addToBucket(int partition, int key, Node item);
-    void updateBucket(int partition, int key, Node item);
+    void addToBucket(int &partition, int &key, Node &item);
+    void updateBucket(int &partition, int &key, Node &item);
     Node popFromBucketKey(int partition);
     int gainSum() const;
 
@@ -29,7 +29,7 @@ class Bucket
     int bucket0Size, bucket1Size;
     int currentSolution;
 
-    Bucket(std::map<int, std::list<Node> > b0, std::map<int, std::list<Node> > b1, const Graph g)
+    Bucket(std::map<int, std::list<Node> > b0, std::map<int, std::list<Node> > b1)
     {
         bucket0 = b0;
         bucket1 = b1;
@@ -42,7 +42,7 @@ class Bucket
 
 #endif
 
-void Bucket::addToBucket(int partition, int key, Node item)
+void Bucket::addToBucket(int &partition, int &key, Node &item)
 {
     if (partition == 0)
     {
@@ -64,7 +64,7 @@ void Bucket::addToBucket(int partition, int key, Node item)
     }
 }
 
-void Bucket::updateBucket(int partition, int key, Node item)
+void Bucket::updateBucket(int &partition, int &key, Node &item)
 {
     // 'Yank' item from one list to another
     if (partition == 0)

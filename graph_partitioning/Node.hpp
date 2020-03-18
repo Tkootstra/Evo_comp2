@@ -41,13 +41,6 @@ void Node::initializeNode(int indexLoc, int nCon, const std::list<int> ConLocati
 
 void Node::flipPartition()
 {
-    if (belongsToWhichPartition == 1)
-    {
-        belongsToWhichPartition = 0;
-    }
-    else
-    {
-        belongsToWhichPartition = 1;
-    }  
-    
+    if (belongsToWhichPartition == 1) belongsToWhichPartition = 0;
+    else belongsToWhichPartition = 1;
 }

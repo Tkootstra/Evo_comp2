@@ -16,7 +16,7 @@ class Graph
 {
     public:
     // Functions
-    void initializeGraph(std::vector<Node> nodeList, const vector<int> solution);
+    void initializeGraph(std::vector<Node> nodeList, const vector<int> &solution);
     int countConnections() const;
     int countSingleCellConnections(const int nodeIndex, int totalValue) const;
 
@@ -28,7 +28,7 @@ class Graph
 
 #endif
 
-void Graph::initializeGraph(std::vector<Node> nodeList, const vector<int> solution)
+void Graph::initializeGraph(std::vector<Node> nodeList, const vector<int> &solution)
 {
     for (size_t i = 0; i < nodeList.size(); i++)
     {
@@ -60,12 +60,12 @@ int Graph::countConnections() const
 int Graph::countSingleCellConnections(const int nodeIndex, int totalValue) const
 {
     // int totalValue = 0;
-    Node checkNode = Nodes[nodeIndex - 1];
+    Node checkNode = Nodes[nodeIndex];
 
     // Loop through node's connections and count which one are in a a different partition
     for (int const &index: checkNode.ConnectionLocations)
     {
-        if (Nodes[index - 1].belongsToWhichPartition != checkNode.belongsToWhichPartition) totalValue++;
+        if (Nodes[index].belongsToWhichPartition != checkNode.belongsToWhichPartition) totalValue++;
         else totalValue--;
     }
 
