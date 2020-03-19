@@ -63,7 +63,7 @@ std::vector<int> makeRandomSolution(int stringLength)
     bool equal = false;
     std::vector<int> solution(stringLength);
 
-    srand(time(NULL));
+    // srand(time(NULL));
 
     while (!equal)
     {
@@ -81,9 +81,11 @@ std::vector<int> makeRandomSolution(int stringLength)
 
 std::list<vector<int> > makeMultipleRandomSolutions(int stringLength, int amount)
 { // Calls makeRandomSolution 'amount' times
+    srand(time(NULL));
     std::list<vector<int> > allSolutions;
     for (size_t i = 0; i < amount; i++)
     {
+        
         allSolutions.push_back(makeRandomSolution(stringLength));
     }
     return allSolutions;
@@ -134,6 +136,21 @@ std::vector<int> getBestSolution(const Graph &g)
     }
 
     return solution;
+}
+
+std::vector<int> uniformCrossOver(std::vector<int> parent1, std::vector<int> parent2)
+{
+    // TODO: aanpassen zoals in de opdracht
+    std::vector<int> child(parent1.size());
+    for (size_t i = 0; i < parent1.size(); i++)
+    {
+        std::vector<int> options(2);
+        options[0] = parent1[i];
+        options[1] = parent2[i];
+        int choiceIndex = rand() % 2;
+        child[i] = options[choiceIndex];
+    }
+    return child;
 }
 
 Bucket initGain(Graph &graph, Bucket &currentBucket)
@@ -381,6 +398,123 @@ std::vector<vector<double> > iterativeLocalSearch(const std::vector<Node> nodeLi
     return combinedResults;
 }
 
+std::pair<vector<int>, vector<int> > sampleSolutions(std::list<vector<int> > solutions)
+{
+    
+    int first = rand() % solutions.size();
+    int second = rand() % solutions.size();
+    while (first == second)
+    {
+        int second = rand() % solutions.size();
+    }
+
+
+    auto firstSolutionPointer = solutions.begin();
+    std::advance(firstSolutionPointer, first);
+    std::vector<int> firstSol = *firstSolutionPointer;
+
+
+    auto secondSolutionPointer = solutions.begin();
+    std::advance(secondSolutionPointer, second);
+    std::vector<int> secondSol = *secondSolutionPointer;
+   
+    std::pair<vector<int>, vector<int>> returnValue = std::make_pair(firstSol, secondSol);
+    
+
+    return returnValue;
+}
+
+void geneticLocalSearch(const std::vector<Node> nodeList, int iterations, int populationSize)
+{
+    //TODO: implement GLS:
+    // 1. population size 50
+    // 2. no generations: each iteration, select 2 random parents, use uniform crossover to generate one child.
+    // 3. FM local search on the child
+    // 4. Let this child compete with the worst solution (dus alle solutions checken)
+    // 5. 
+
+ 
+    std::cout << "Running Genetic Local Search..." << endl;
+
+    // make n random solutions
+
+    std::list<vector<int> > startingSolutions = makeMultipleRandomSolutions(500, populationSize);
+    
+    std::vector<double> cR(2);
+    std::vector<vector<double> > combinedResults(iterations);
+
+    std::chrono::steady_clock::time_point begin;
+    std::chrono::duration<double> dur;
+    
+    int iter = 0;
+    while (iter <= iterations)
+    {
+        
+        std::cout << "doing new gen" << endl;
+        // search for worst solution
+        std::vector<int> worstSol;
+        int worstScore = 0;
+        std::list<vector<int>> allSolutions;
+
+        for (auto& solution: startingSolutions)
+        {   
+            std::cout << "initializing graph" << endl;
+            Graph g;
+            g.initializeGraph(nodeList, solution);
+            std::cout << "doing single FM" << endl;
+            std::pair<int, vector<int> > resultPair = singleFMrun(g);
+            int score = resultPair.first;
+            std::vector<int> currentSol = resultPair.second;
+            if (score > worstScore) 
+            {
+                worstScore = score;
+                worstSol = currentSol;
+            }
+            allSolutions.push_back(currentSol);
+            iter++;
+            std::cout << iter << ' ' << score << endl;
+        }
+        
+        // sample 2 random parents
+        std::cout << "Doing crossover" << endl;
+        std::pair<vector<int>, vector<int>> randomSample = sampleSolutions(allSolutions);
+        std::vector<int> first  = randomSample.first;
+        std::vector<int> second = randomSample.second;
+        std::cout << "doing uniform xover" << endl;
+        std::vector<int> generatedChild = uniformCrossOver(first, second);
+
+        int sum = 0;
+        for (auto& n:generatedChild) sum += n;
+        std::cout << "sum of child: "  << sum << endl;
+
+
+        // run single FM with child
+        std::cout << "doing single FM" << endl;
+        Graph child;
+        child.initializeGraph(nodeList, generatedChild);
+        std::pair<int, vector<int> > childRes = singleFMrun(child);
+        std::cout << "comparing sols" << endl;
+        iter++;
+        int childScore = childRes.first;
+        std::vector<int> childSolution = childRes.second;
+        
+        // compare chil solution with worst one. if child better than worst, delete worst from list and insert child
+        if (childScore <= worstScore) 
+        {
+            allSolutions.remove(worstSol);
+            allSolutions.push_back(childSolution);
+            
+        }
+
+        startingSolutions = allSolutions;
+
+        std::cout << "childscore:" << childScore << endl;
+
+    }
+
+}
+
+
 void writeToFile(const std::vector<vector<double> > results, const std::string fileName)
 { // Write results to .txt
     std::ofstream output_file(fileName);
@@ -407,14 +541,14 @@ int main()
     // parse nodes from txt file
     std::vector<Node> nodeList = parseGraph();
     
-    // Run MLS
-    std::vector<vector<double> > resultsMLS = multiStartLocalSearch(nodeList, runs);
-    writeToFile(resultsMLS, "MLS.txt");
+    // // Run MLS
+    // std::vector<vector<double> > resultsMLS = multiStartLocalSearch(nodeList, runs);
+    // writeToFile(resultsMLS, "MLS.txt");
 
-    // Run ILS
-    std::vector<vector<double> > resultsILS = iterativeLocalSearch(nodeList, runs, 0.1);
-    writeToFile(resultsILS, "ILS.txt");
+    // // Run ILS
+    // std::vector<vector<double> > resultsILS = iterativeLocalSearch(nodeList, runs, 0.1);
+    // writeToFile(resultsILS, "ILS.txt");
+
+    geneticLocalSearch(nodeList,runs, 50);
 
 } 
-
- 

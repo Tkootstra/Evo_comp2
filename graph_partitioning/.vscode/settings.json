@@ -68,6 +68,9 @@
         "bit": "cpp",
         "deque": "cpp",
         "iomanip": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "*.tcc": "cpp",
+        "clocale": "cpp",
+        "memory_resource": "cpp"
     }
 }
