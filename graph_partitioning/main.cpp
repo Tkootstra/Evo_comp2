@@ -126,6 +126,26 @@ std::vector<int> perturbSolution(std::vector<int> solution, const float ratio)
     return tempSolution;
 }
 
+int hammingDistance(std::vector<int> parent1, std::vector<int> parent2)
+{
+    int distance = 0;
+    for (size_t i = 0; i < parent1.size(); i++)
+    {
+        if (parent1[i] != parent2[i]) distance++;
+    }
+    return distance;
+}
+
+std::vector<int> invertSolution(std::vector<int> solution)
+{
+    for (size_t i = 0; i < solution.size(); i++)
+    {
+        if (solution[i] == 0) solution[i] = 1;
+        else solution[i] = 0;
+    }
+    return solution;
+}
+
 std::vector<int> getBestSolution(const Graph &g)
 { // Retrieve the vector representation of the partitioning of graph g
     std::vector<int> solution(g.Nodes.size());
@@ -140,18 +160,60 @@ std::vector<int> getBestSolution(const Graph &g)
 
 std::vector<int> uniformCrossOver(std::vector<int> parent1, std::vector<int> parent2)
 {
-    // TODO: aanpassen zoals in de opdracht
+    
+
+    // check the hamming distance between the parents. If it is larger than l/2, invert parent1.
+    int distance = hammingDistance(parent1, parent2);
+    if (distance > (parent2.size() /2 )) parent1 = invertSolution(parent1);
+
     std::vector<int> child(parent1.size());
-    for (size_t i = 0; i < parent1.size(); i++)
+    int zeroCounter = 0;
+    int oneCounter = 0;
+    int similarBits = 0;
+    // compute balance of missing ones
+    for (size_t i = 0; i < child.size(); i++)
     {
-        std::vector<int> options(2);
-        options[0] = parent1[i];
-        options[1] = parent2[i];
-        int choiceIndex = rand() % 2;
-        child[i] = options[choiceIndex];
+        if (parent2[i] == parent1[i])
+        {
+            similarBits++;
+            if (parent2[i] == 0) zeroCounter++;
+            if (parent2[i] == 1) oneCounter++;
+        }
+
     }
+    // std::cout << "amount of zeroes: " << zeroCounter << endl;
+    // std::cout << "amount of ones: " << oneCounter << endl;
+    // std::cout << "amount of disagreebles: " << parent1.size() - similarBits << endl;
+
+    int amountOfOnesToSample = (parent1.size() /2) - oneCounter;
+    int amountOfZeroesToSample = (parent1.size() /2) - zeroCounter;
+    int notEqualBits = parent2.size() - similarBits /2;
+    int balance = zeroCounter - oneCounter ;
+    std::vector<int> zeroes(amountOfZeroesToSample, 0);
+    std::vector<int> ones(amountOfOnesToSample, 1);
+    zeroes.insert(zeroes.end(), ones.begin(), ones.end());
+    std::vector<int> samplePool = zeroes;
+    std::random_shuffle(samplePool.begin(), samplePool.end());
+
+    int sampleIdx = 0;
+    for (size_t i = 0; i < parent1.size(); i++)
+    {   // constraints: 1. same bit value if indice value are equal. 
+        //              2. if bit not equal, fill with random 1 or 0, but these must be equal in number for the TOTAL solution (samplen zonder teruglegging)
+        int bit;
+        if (parent2[i] == parent1[i]) bit = parent1[i];
+        else 
+        {   
+            bit = samplePool[sampleIdx];
+            sampleIdx ++;
+        }
+        child[i] = bit;
+    }
+    // std::cout << "sampleidx" << sampleIdx << endl;
+    // std::cout << "pool size: "<< samplePool.size() << endl;
     return child;
 }
+
+
 
 Bucket initGain(Graph &graph, Bucket &currentBucket)
 { // Compute gain for all free nodes
