@@ -164,7 +164,7 @@ std::vector<int> uniformCrossOver(std::vector<int> parent1, std::vector<int> par
 
     // check the hamming distance between the parents. If it is larger than l/2, invert parent1.
     int distance = hammingDistance(parent1, parent2);
-    if (distance > (parent2.size() /2 )) parent1 = invertSolution(parent1);
+    if (distance > (parent2.size() /2)) parent1 = invertSolution(parent1);
 
     std::vector<int> child(parent1.size());
     int zeroCounter = 0;
@@ -197,7 +197,7 @@ std::vector<int> uniformCrossOver(std::vector<int> parent1, std::vector<int> par
 
     int sampleIdx = 0;
     for (size_t i = 0; i < parent1.size(); i++)
-    {   // constraints: 1. same bit value if indice value are equal. 
+    {   // constraints: 1. same bit value if indice values are equal. 
         //              2. if bit not equal, fill with random 1 or 0, but these must be equal in number for the TOTAL solution (samplen zonder teruglegging)
         int bit;
         if (parent2[i] == parent1[i]) bit = parent1[i];
@@ -460,14 +460,27 @@ std::vector<vector<double> > iterativeLocalSearch(const std::vector<Node> nodeLi
     return combinedResults;
 }
 
+int randomNumberGenerator(int min, int max)
+{
+    
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<int> dist(min, max);
+    std::cout << "sampling random number" << endl;
+    int randomNumber = dist(rng);
+    return randomNumber;
+}
+
 std::pair<vector<int>, vector<int> > sampleSolutions(std::list<vector<int> > solutions)
 {
     
-    int first = rand() % solutions.size();
-    int second = rand() % solutions.size();
+    int first = randomNumberGenerator(0, solutions.size());
+    int second = randomNumberGenerator(0, solutions.size());
+    std::cout << "succesful sampling " << endl;
     while (first == second)
-    {
-        int second = rand() % solutions.size();
+    {   std::cout << "resampling" << endl;
+        second = randomNumberGenerator(0, solutions.size());
+        
     }
 
 
@@ -486,7 +499,7 @@ std::pair<vector<int>, vector<int> > sampleSolutions(std::list<vector<int> > sol
     return returnValue;
 }
 
-void geneticLocalSearch(const std::vector<Node> nodeList, int iterations, int populationSize)
+std::vector<vector<double> > geneticLocalSearch(const std::vector<Node> nodeList, int iterations, int populationSize)
 {
     //TODO: implement GLS:
     // 1. population size 50
@@ -495,6 +508,9 @@ void geneticLocalSearch(const std::vector<Node> nodeList, int iterations, int po
     // 4. Let this child compete with the worst solution (dus alle solutions checken)
     // 5. 
 
+
+    // TODO: bug => volgens mij gaat het met de indexen niet goed omdat je 50x normaal FM doet en daarna met crossover nog een keer los;
+    // Segmentation fault (core dumped)
  
     std::cout << "Running Genetic Local Search..." << endl;
 
@@ -507,11 +523,13 @@ void geneticLocalSearch(const std::vector<Node> nodeList, int iterations, int po
 
     std::chrono::steady_clock::time_point begin;
     std::chrono::duration<double> dur;
+   
     
-    int iter = 0;
-    while (iter <= iterations)
+    // int iter = 0;
+    for (size_t i = 0; i < iterations; i++)
     {
         
+        begin = std::chrono::steady_clock::now();
         std::cout << "doing new gen" << endl;
         // search for worst solution
         std::vector<int> worstSol;
@@ -523,6 +541,8 @@ void geneticLocalSearch(const std::vector<Node> nodeList, int iterations, int po
             std::cout << "initializing graph" << endl;
             Graph g;
             g.initializeGraph(nodeList, solution);
+            
+
             std::cout << "doing single FM" << endl;
             std::pair<int, vector<int> > resultPair = singleFMrun(g);
             int score = resultPair.first;
@@ -533,12 +553,18 @@ void geneticLocalSearch(const std::vector<Node> nodeList, int iterations, int po
                 worstSol = currentSol;
             }
             allSolutions.push_back(currentSol);
-            iter++;
-            std::cout << iter << ' ' << score << endl;
+            i++;
+            dur = (std::chrono::steady_clock::now() - begin);
+            cR[0] = resultPair.first;
+            cR[1] = dur.count();
+            combinedResults[i] = cR;
+            std::cout << i << ' ' << score << endl;
+
+
         }
         
         // sample 2 random parents
-        std::cout << "Doing crossover" << endl;
+        std::cout << "sampling solutions" << endl;
         std::pair<vector<int>, vector<int>> randomSample = sampleSolutions(allSolutions);
         std::vector<int> first  = randomSample.first;
         std::vector<int> second = randomSample.second;
@@ -551,28 +577,34 @@ void geneticLocalSearch(const std::vector<Node> nodeList, int iterations, int po
 
 
         // run single FM with child
-        std::cout << "doing single FM" << endl;
+        
         Graph child;
         child.initializeGraph(nodeList, generatedChild);
+        std::cout << "doing single FM" << endl;
         std::pair<int, vector<int> > childRes = singleFMrun(child);
         std::cout << "comparing sols" << endl;
-        iter++;
+        i++;
         int childScore = childRes.first;
         std::vector<int> childSolution = childRes.second;
         
-        // compare chil solution with worst one. if child better than worst, delete worst from list and insert child
+        // compare child solution with worst one. if child better than worst, delete worst from list and insert child
         if (childScore <= worstScore) 
         {
             allSolutions.remove(worstSol);
             allSolutions.push_back(childSolution);
             
         }
-
+        std::cout << "vector size:" << combinedResults.size() <<" index: " << i << endl;
         startingSolutions = allSolutions;
-
-        std::cout << "childscore:" << childScore << endl;
+        dur = (std::chrono::steady_clock::now() - begin);
+        cR[0] = childRes.first;
+        cR[1] = dur.count();
+        combinedResults[i] = cR;
+        std::cout << "Iteration " << i + 1 << ": Score " << childRes.first << " | Time: " << cR[1] << "s." << endl;
 
     }
+
+    return combinedResults;
 
 }
 
@@ -598,12 +630,12 @@ void writeToFile(const std::vector<vector<double> > results, const std::string f
 int main()
 {   // https://www.codeproject.com/Articles/1271904/Programming-Concurrency-in-Cplusplus-Part-1
     
-    int runs = 1000;
+    int runs = 100;
 
     // parse nodes from txt file
     std::vector<Node> nodeList = parseGraph();
     
-    // // Run MLS
+    // Run MLS
     // std::vector<vector<double> > resultsMLS = multiStartLocalSearch(nodeList, runs);
     // writeToFile(resultsMLS, "MLS.txt");
 
@@ -611,6 +643,7 @@ int main()
     // std::vector<vector<double> > resultsILS = iterativeLocalSearch(nodeList, runs, 0.1);
     // writeToFile(resultsILS, "ILS.txt");
 
-    geneticLocalSearch(nodeList,runs, 50);
+    std::vector<vector<double> > resultsGLS = geneticLocalSearch(nodeList,runs, 50);
+    writeToFile(resultsGLS, "GLS.txt");
 
 } 
