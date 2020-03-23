@@ -16,7 +16,7 @@ class Graph
 {
     public:
     // Functions
-    void initializeGraph(std::vector<Node> nodeList, const vector<int> &solution);
+    void initializeGraph(std::vector<Node> nodeList, vector<int> solution);
     int countConnections() const;
     int countSingleCellConnections(const int nodeIndex, int totalValue) const;
 
@@ -28,7 +28,7 @@ class Graph
 
 #endif
 
-void Graph::initializeGraph(std::vector<Node> nodeList, const vector<int> &solution)
+void Graph::initializeGraph(std::vector<Node> nodeList, vector<int> solution)
 {
     for (size_t i = 0; i < nodeList.size(); i++)
     {

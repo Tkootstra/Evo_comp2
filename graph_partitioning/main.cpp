@@ -161,10 +161,13 @@ std::vector<int> getBestSolution(const Graph &g)
 std::vector<int> uniformCrossOver(std::vector<int> parent1, std::vector<int> parent2)
 {
     
-
+    std::cout << "doing hamming" << endl;
+    std:: cout << "pa1 size: " << parent1.size() << " pa2 size: " << parent2.size() << endl;
     // check the hamming distance between the parents. If it is larger than l/2, invert parent1.
     int distance = hammingDistance(parent1, parent2);
     if (distance > (parent2.size() /2)) parent1 = invertSolution(parent1);
+
+    std::cout << "computing balance" << endl;
 
     std::vector<int> child(parent1.size());
     int zeroCounter = 0;
@@ -195,6 +198,8 @@ std::vector<int> uniformCrossOver(std::vector<int> parent1, std::vector<int> par
     std::vector<int> samplePool = zeroes;
     std::random_shuffle(samplePool.begin(), samplePool.end());
 
+    std::cout << "making child" << endl;
+
     int sampleIdx = 0;
     for (size_t i = 0; i < parent1.size(); i++)
     {   // constraints: 1. same bit value if indice values are equal. 
@@ -208,8 +213,8 @@ std::vector<int> uniformCrossOver(std::vector<int> parent1, std::vector<int> par
         }
         child[i] = bit;
     }
-    // std::cout << "sampleidx" << sampleIdx << endl;
-    // std::cout << "pool size: "<< samplePool.size() << endl;
+    std::cout << "sampleidx" << sampleIdx << endl;
+    std::cout << "pool size: "<< samplePool.size() << endl;
     return child;
 }
 
@@ -460,44 +465,71 @@ std::vector<vector<double> > iterativeLocalSearch(const std::vector<Node> nodeLi
     return combinedResults;
 }
 
-int randomNumberGenerator(int min, int max)
+int randomNumberGenerator(int max)
 {
-    
+    //TODO: hier zit een grote bug in, werkt totaal niet zoals het moet.
     std::random_device dev;
     std::mt19937 rng(dev());
-    std::uniform_int_distribution<int> dist(min, max);
+    std::uniform_int_distribution<int> dist(0, max);
     std::cout << "sampling random number" << endl;
     int randomNumber = dist(rng);
     return randomNumber;
+
+    // srand((unsigned) time(0));
+    // int randomNumber;
+    // randomNumber = (rand() % max) +1;
+    // return randomNumber;
+
+    
 }
 
+std::vector<int> sampleFromList(std::list<vector<int>> sols, int idx)
+{
+    int index = 0;
+    std::vector<int> match;
+    for (auto sol: sols)
+    {
+        if (index == idx) match = sol;
+        index++;
+
+    }
+    return match;
+}
 std::pair<vector<int>, vector<int> > sampleSolutions(std::list<vector<int> > solutions)
 {
-    
-    int first = randomNumberGenerator(0, solutions.size());
-    int second = randomNumberGenerator(0, solutions.size());
-    std::cout << "succesful sampling " << endl;
+    std::cout << "solution size: " << solutions.size() << endl;
+
+    int first = randomNumberGenerator(solutions.size()-1);
+    int second = randomNumberGenerator(solutions.size()-1);
+    std::cout << "succesful sampling :" << first << "  " << second << endl;
     while (first == second)
     {   std::cout << "resampling" << endl;
-        second = randomNumberGenerator(0, solutions.size());
+        second = randomNumberGenerator(solutions.size());
         
     }
 
+    // std::cout << "pointer shizzle" << endl;
+    // auto firstSolutionPointer = solutions.begin();
+    // std::advance(firstSolutionPointer, first);
+    // std::vector<int> firstSol = *firstSolutionPointer;
 
-    auto firstSolutionPointer = solutions.begin();
-    std::advance(firstSolutionPointer, first);
-    std::vector<int> firstSol = *firstSolutionPointer;
 
+    // auto secondSolutionPointer = solutions.begin();
+    // std::advance(secondSolutionPointer, second);
+    // std::vector<int> secondSol = *secondSolutionPointer;
+    // std::cout << "pointer shizzle passed" << endl;
 
-    auto secondSolutionPointer = solutions.begin();
-    std::advance(secondSolutionPointer, second);
-    std::vector<int> secondSol = *secondSolutionPointer;
-   
+    std::vector<int> firstSol = sampleFromList(solutions, first);
+    std::vector<int> secondSol = sampleFromList(solutions, second);
+
+    std::cout << "first sample size: " << firstSol.size() << " second sample size: " << secondSol.size() << endl;
     std::pair<vector<int>, vector<int>> returnValue = std::make_pair(firstSol, secondSol);
     
 
     return returnValue;
 }
+
+
 
 std::vector<vector<double> > geneticLocalSearch(const std::vector<Node> nodeList, int iterations, int populationSize)
 {
@@ -525,8 +557,9 @@ std::vector<vector<double> > geneticLocalSearch(const std::vector<Node> nodeList
     std::chrono::duration<double> dur;
    
     
-    // int iter = 0;
-    for (size_t i = 0; i < iterations; i++)
+    bool cont = true;
+    int iter = 0;
+    while (cont)
     {
         
         begin = std::chrono::steady_clock::now();
@@ -538,6 +571,10 @@ std::vector<vector<double> > geneticLocalSearch(const std::vector<Node> nodeList
 
         for (auto& solution: startingSolutions)
         {   
+            if (iter >= iterations)
+            {   cont = false;
+                break;
+            }
             std::cout << "initializing graph" << endl;
             Graph g;
             g.initializeGraph(nodeList, solution);
@@ -553,18 +590,31 @@ std::vector<vector<double> > geneticLocalSearch(const std::vector<Node> nodeList
                 worstSol = currentSol;
             }
             allSolutions.push_back(currentSol);
-            i++;
+           
             dur = (std::chrono::steady_clock::now() - begin);
             cR[0] = resultPair.first;
             cR[1] = dur.count();
-            combinedResults[i] = cR;
-            std::cout << i << ' ' << score << endl;
+            std::cout << "size of combinedresults:" << combinedResults.size() << endl;
+            if (iter == 209) 
+            {
+                std::cout << " kek" << endl;
+            }
+            combinedResults[iter] = cR;
+            std::cout << iter << ' ' << score << endl;
+            iter++;
+            
 
 
+        }
+        if (iter >= iterations)
+        {
+             cont = false;
+             break;
         }
         
         // sample 2 random parents
         std::cout << "sampling solutions" << endl;
+        std::cout << "allsolutions size: " << allSolutions.size() << endl;
         std::pair<vector<int>, vector<int>> randomSample = sampleSolutions(allSolutions);
         std::vector<int> first  = randomSample.first;
         std::vector<int> second = randomSample.second;
@@ -583,7 +633,7 @@ std::vector<vector<double> > geneticLocalSearch(const std::vector<Node> nodeList
         std::cout << "doing single FM" << endl;
         std::pair<int, vector<int> > childRes = singleFMrun(child);
         std::cout << "comparing sols" << endl;
-        i++;
+        
         int childScore = childRes.first;
         std::vector<int> childSolution = childRes.second;
         
@@ -594,14 +644,14 @@ std::vector<vector<double> > geneticLocalSearch(const std::vector<Node> nodeList
             allSolutions.push_back(childSolution);
             
         }
-        std::cout << "vector size:" << combinedResults.size() <<" index: " << i << endl;
+        std::cout << "vector size:" << combinedResults.size() <<" index: " << iter << endl;
         startingSolutions = allSolutions;
         dur = (std::chrono::steady_clock::now() - begin);
         cR[0] = childRes.first;
         cR[1] = dur.count();
-        combinedResults[i] = cR;
-        std::cout << "Iteration " << i + 1 << ": Score " << childRes.first << " | Time: " << cR[1] << "s." << endl;
-
+        combinedResults[iter] = cR;
+        std::cout << "Iteration " << iter << ": Score " << childRes.first << " | Time: " << cR[1] << "s." << endl;
+        iter++;
     }
 
     return combinedResults;
@@ -630,7 +680,7 @@ void writeToFile(const std::vector<vector<double> > results, const std::string f
 int main()
 {   // https://www.codeproject.com/Articles/1271904/Programming-Concurrency-in-Cplusplus-Part-1
     
-    int runs = 100;
+    int runs = 1000;
 
     // parse nodes from txt file
     std::vector<Node> nodeList = parseGraph();
