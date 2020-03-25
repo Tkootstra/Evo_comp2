@@ -35,7 +35,6 @@ void Graph::initializeGraph(std::vector<Node> nodeList, vector<int> solution)
         // Set partition to value of that location in solution
         nodeList[i].belongsToWhichPartition = solution[i];  
     }
-
     Nodes = nodeList;   
 }
 
@@ -64,11 +63,13 @@ int Graph::countSingleCellConnections(const int nodeIndex, int totalValue) const
 
     // Loop through node's connections and count which one are in a a different partition
     for (int const &index: checkNode.ConnectionLocations)
-    {
+    {   
+        if (!Nodes[index].isFixed)
+        {
         if (Nodes[index].belongsToWhichPartition != checkNode.belongsToWhichPartition) totalValue++;
         else totalValue--;
+        }
     }
-
     return totalValue;
 
 }
