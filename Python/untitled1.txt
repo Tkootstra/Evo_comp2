@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Mar 26 21:33:43 2020
+Author: Alex Hoogerbrugge (@higher-bridge)
+"""
+
+1 FM pass -->
+
+Graaf met 250 nodes aan beide kanten
+    Voor alle nodes kijk je wat de gain zou zijn als je die node *ZOU* FLIPPEN
+    Kies de node met hoogste gain -> flip die voor het echie
+    Update nu gains van alle relevante nodes (buren van de geflipte node)
+    
+    Tel de gains van alle nodes op en hou deze bij, samen met bijbehorende graph
+    
+    Aan het eind, kijk waar de gain sum het hoogst was, en return bijbehorende graph
+        LET OP: de score is het aantal kruisingen, NIET de gain sum
+        
+altijd 250 kruisingen -> dus je eindigt met een gespiegelde graph
+het kan zijn dat je na 45 flips de beste graph had -> die return je
+
+Je krijgt een nieuwe solution -> die stop je er nog een keer in
+                                herhaal dit 5-10x

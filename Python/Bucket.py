@@ -99,6 +99,7 @@ class Bucket(object):
         
         return gain
     
+    
 #    def init_gain(self, graph):
 #        # This works fine
 #        for i in range(len(graph.node_list)):

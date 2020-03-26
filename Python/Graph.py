@@ -6,12 +6,22 @@ Created on Thu Mar 26 09:17:12 2020
 @author: timo
 """
 from Net import Net
+from copy import deepcopy
 
 class Graph(object):
     
     def __init__(self, node_list):
         self.node_list = node_list
         self.net_list = set()
+        self.partition_size = 250
+        
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            setattr(result, k, deepcopy(v, memo))
+        return result
         
     def create_nets(self):
         # Creates nets and puts them in the node
@@ -20,32 +30,39 @@ class Graph(object):
         for n in self.node_list:
             for p in n.connection_locations:
                 new_net = Net(n, self.node_list[p])
-                
+        
                 n.localnets.append(new_net)
                 nets.append(new_net)
-        
+                        
         self.net_list = set(nets)
     
     
     def define_partitions(self, solution):
-        self.reset_gains()      # test
+        self.reset_gains() 
         
         for i in range(len(self.node_list)):
             self.node_list[i].belongs_to_partition = solution[i]
-            
+        
         self.create_nets()
     
     def count_connections(self):
         total = 0
-        for node in self.node_list:
-            if node.belongs_to_partition == 0:
-                for loc in node.connection_locations:
-                    if self.node_list[loc].belongs_to_partition == 1:
-                        total += 1
+        for net in self.net_list:
+            if net.is_cut():
+                total += 1
+                
         return total
+        
+#        total = 0
+#        for node in self.node_list:
+#            if node.belongs_to_partition == 0:
+#                for loc in node.connection_locations:
+#                    if self.node_list[loc].belongs_to_partition == 1:
+#                        total += 1
+#        return total
     
-    def compute_gains(self, node_index):
-        checknode = self.node_list[node_index]
+    def compute_gains(self, checknode):
+#        checknode = self.node_list[node_index]
         t = checknode.belongs_to_partition
         f = not t
         
@@ -93,7 +110,7 @@ class Graph(object):
             all_gains.append(net.nodes[0].gain)
             all_gains.append(net.nodes[1].gain)
             
-        print(f'Max init: {max(all_gains)}')
+#        print(f'Max init: {max(all_gains)}')
         
     def reset_gains(self):
         new_nodes = []
@@ -104,6 +121,28 @@ class Graph(object):
             new_nodes.append(node)
             
         self.node_list = new_nodes
+        
+    def get_best_node(self, partition):
+        bucket = [n for n in self.node_list if n.belongs_to_partition == partition]
+        
+        high_gain = -500
+        best_node = None
+        
+        for node in bucket:
+            if node.gain > high_gain:
+                high_gain = node.gain
+                best_node = node
+        
+        self.partition_size -= 1
+        return best_node
+
+    def calc_gain_sum(self):
+        return sum([n.gain for n in self.node_list])
+    
+    def flip_partition(self, node_index):
+        self.node_list[node_index].flip_partition()
+        self.create_nets()
+        
 
     
 #    def count_single_cell_connections(self, node_index, total):
