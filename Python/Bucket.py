@@ -19,12 +19,15 @@ class Bucket(object):
         
     def add_to_bucket(self, partition, key, node):
         if partition == 0:
+            #  dit heb ik toegevoegd, zodat die 
+            # automatische een nieuwe key toevoegt als die nog niet in de dict zit
             if key not in self.bucketA.keys():
                 self.bucketA[key] = []
             self.bucket[key].append(node)
             if key > self.bucketA_max_pointer:
                 self.bucketA_max_pointer = key
         else:
+            #  same here
             if key not in self.bucketB.keys():
                 self.bucketB[key] = []
                 

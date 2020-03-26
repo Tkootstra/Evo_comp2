@@ -56,9 +56,6 @@ def parse_graph():
     
     
     return nodes
-        
-    
-
 
 def single_FM_run(graph):
     bucketA = dict()
