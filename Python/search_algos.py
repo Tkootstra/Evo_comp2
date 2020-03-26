@@ -3,6 +3,7 @@
 from Graph import Graph
 from Node import Node
 from Bucket import Bucket
+from Net import Net
 import time
 import random
 
@@ -19,8 +20,8 @@ def create_solution(string_length):
     sol = random.sample(z_o, string_length)
     
     return sol
-            
 
+        
 def parse_graph():
     maxcon = 0
     
@@ -39,7 +40,7 @@ def parse_graph():
         
         if ncon > maxcon:
             maxcon = ncon
-
+    
     return nodes, maxcon
 
 #def init_gain(graph, current_bucket):
@@ -81,11 +82,8 @@ def parse_graph():
     
 
 
-def single_FM_run(graph, maxcon:int):
-    bucketA = {key: [] for key in range(-(maxcon + 1), maxcon + 2)} # [-17;17]
-    bucketB = bucketA.copy()
-        
-    results = Bucket(bucketA, bucketB, maxcon)
+def single_FM_run(graph, maxcon):        
+    results = Bucket(maxcon)
         
 #    results.init_gain(graph)
     results.init_gain_test(graph)
@@ -96,9 +94,11 @@ def single_FM_run(graph, maxcon:int):
     
     while results.bucketA_size > 0:
         node_to_change_A = results.pop_from_bucket_key(0)
+#        node_to_change_A = results.get_best_node(graph, 0)
         graph.node_list[node_to_change_A.index].flip_partition()
         
         node_to_change_B = results.pop_from_bucket_key(1)
+#        node_to_change_B = results.get_best_node(graph, 1)
         graph.node_list[node_to_change_B.index].flip_partition()
         
 #        results.update_gain(graph, node_to_change_A.connection_locations)
@@ -118,48 +118,34 @@ def single_FM_run(graph, maxcon:int):
     return best_score, best_score_solution
 
     
-def MLS(node_list:list, maxcon, iterations:int):
-#    best_score = 2564
+def MLS(node_list:list, maxcon:int, iterations:int):
+    score = 2564
     
-    print('hoi')
     
     i = 0
     result_dict = {key:[] for key in ['score', 'time']}
     
     start = time.time()
     graaf = Graph(node_list)
-    print('created graph')
-    graaf.define_partitions(create_solution(500))
-    print('defined partitions')
-    score, solution = single_FM_run(graaf, maxcon)
-    print('single run')
-    i += 1
-    
-    
-    dur = time.time() - start
-    result_dict['score'].append(score)
-    result_dict['time'].append(dur)
-    print(f"Iteration: {i}, Score: {score}, Time: {dur}s.")
+    solution = create_solution(500)
     
     while i < iterations:
         start = time.time()
-        graaf_ = Graph(node_list)
-        graaf_.define_partitions(solution)
-        score_, solution_ = single_FM_run(graaf_, maxcon)
+        graaf.define_partitions(solution)
+        score_, solution_ = single_FM_run(graaf, maxcon)
         i += 1
+        
+        dur = time.time() - start
+        result_dict['score'].append(score)
+        result_dict['time'].append(dur)
+        print(f"Iteration: {i}, Score: {score}, Time: {dur}s.")
         
         if score_ < score:
             score, solution = score_, solution_  
-            
-            dur = time.time() - start
-            result_dict['score'].append(score)
-            result_dict['time'].append(dur)
-            print(f"Iteration: {i}, Score: {score}, Time: {dur}s.")
-            
+
         else:
             # Create new solution, aka start anew
             start = time.time()
-            graaf = Graph(node_list)
             graaf.define_partitions(create_solution(500))
             score, solution = single_FM_run(graaf, maxcon)
             i += 1
@@ -175,7 +161,15 @@ nodes, maxcon = parse_graph()
 #for n in nodes:
 #    print(f'{n.index}, {len(n.connection_locations)}, {n.connection_locations}')
 
-res = MLS(nodes, maxcon, 10)
+#res = MLS(nodes, maxcon, 10)
+
+# Test of het iets te maken heeft met hergebruiken van solutions
+graaf = Graph(nodes)
+for i in range(300):
+    graaf.define_partitions(create_solution(500))
+    sc, so = single_FM_run(graaf, maxcon)
+    print(f'it {i}, score {sc}')
+    
 
         
         

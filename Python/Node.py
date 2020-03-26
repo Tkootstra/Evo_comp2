@@ -10,12 +10,16 @@ class Node(object):
         self.is_fixed = False
         self.gain = 0;
         self.belongs_to_partition = None
+        self.localnets = []
     
     def flip_partition(self):
         self.belongs_to_partition = 1 if self.belongs_to_partition == 0 else 0
     
     def __eq__(self, other):
         return self.index == other.index
+    
+    def __hash__(self):
+        return hash(self.index)
         
     
    

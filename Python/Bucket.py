@@ -9,14 +9,19 @@ Created on Thu Mar 26 10:27:25 2020
 
 class Bucket(object):
     
-    def __init__(self, dict_a, dict_b, maxcon):
-        self.bucketA = dict_a
-        self.bucketB = dict_b
-        self.bucketA_max_pointer = -19
-        self.bucketB_max_pointer = -19
+    def __init__(self, maxcon):
+        self.maxcon = maxcon
+        
+        self.bucketA = {key: [] for key in range(-(self.maxcon + 1), self.maxcon + 2)} # [-17;17]
+        self.bucketB = self.bucketA.copy()
+        
+        self.bucketA_max_pointer = -500
+        self.bucketB_max_pointer = -500
+        
         self.bucketA_size = 250
         self.bucketB_size = 250
         
+    
     def add_to_bucket(self, partition, key, node):
         if partition == 0:
             #  dit heb ik toegevoegd, zodat die 
@@ -45,17 +50,19 @@ class Bucket(object):
             for key in self.bucketA.keys():
                 for item in self.bucketA[key]:
                     if item == node:
-                        self.bucketA[key].remove(item)
-                        self.add_to_bucket(partition, new_key, node)
-                        return
+                        if key != new_key:
+                            self.bucketA[key].remove(item)
+                            self.add_to_bucket(partition, new_key, node)
+                            return
                         
         else:
             for key in self.bucketB.keys():
                 for item in self.bucketB[key]:
                     if item == node:
-                        self.bucketB[key].remove(item)
-                        self.add_to_bucket(partition, new_key, node)
-                        return
+                        if key != new_key:
+                            self.bucketB[key].remove(item)
+                            self.add_to_bucket(partition, new_key, node)
+                            return
     
     def pop_from_bucket_key(self, partition):
         if partition == 0:
@@ -81,6 +88,7 @@ class Bucket(object):
 #                print(self.bucketB_max_pointer, ' updated B')
                 return self.pop_from_bucket_key(partition)
             
+    
     def gain_sum(self):
         gain = 0
         for key in self.bucketA.keys():
@@ -130,8 +138,8 @@ class Bucket(object):
         for idx in graph.node_list[node_index].connection_locations:
             current = graph.node_list[idx]
             
-            if current.gain < -16 or current.gain > 16:
-                print(f'{idx}: {current.gain}')
+#            if current.gain < -16 or current.gain > 16:
+#                print(f'{idx}: {current.gain}')
             
             self.update_bucket(current.belongs_to_partition, current.gain, current)
             
@@ -139,12 +147,11 @@ class Bucket(object):
         graph.compute_initial_gains()
         
         for node in graph.node_list:
-            if node.gain < -16 or node.gain > 16:
-                print(f'{node.index}: {node.gain} initial')
+#            if node.gain < -16 or node.gain > 16:
+#                print(f'{node.index}: {node.gain} initial')
             
             self.add_to_bucket(node.belongs_to_partition, node.gain, node)
             
-        
         
         
         
