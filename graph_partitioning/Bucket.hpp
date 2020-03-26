@@ -61,6 +61,7 @@ void Bucket::addToBucket(int &partition, int &key, Node &item)
         {
             bucket1maxPointer = key;
         }
+        
     }
 }
 
@@ -107,8 +108,10 @@ Node Bucket::popFromBucketKey(int partition)
     // std::cout << bucket0maxPointer << " " << bucket1maxPointer << endl;
     if (partition == 0)
     {
+
         if (bucket0[bucket0maxPointer].size() > 0)
         {
+            std::cout << "pointer is: " << bucket0maxPointer << ", size of list is:" << bucket0[bucket0maxPointer].size() << endl;
             // Remove from bucket array
             Node item = bucket0[bucket0maxPointer].front();
             bucket0[bucket0maxPointer].remove(item);

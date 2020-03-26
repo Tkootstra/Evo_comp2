@@ -330,6 +330,7 @@ std::pair<int, std::vector<int> > singleFMrun(Graph g)
         // We now have a new valid partition; update gains for neighbors
         results = updateGain(g, results, nodeToChange0.ConnectionLocations);
         results = updateGain(g, results, nodeToChange1.ConnectionLocations);
+        // waarom overschrijven??
 
         // Count the score again
         score = results.gainSum();
@@ -342,7 +343,7 @@ std::pair<int, std::vector<int> > singleFMrun(Graph g)
         if (score > bestGainSum)
         {
             bestGainSum = score;
-            bestScoreGraph = g;
+            bestScoreGraph = g; // deze lijn doet niets? bestscoregraph is altijd g??
         }
     }
 
@@ -789,15 +790,15 @@ int main()
     std::vector<Node> nodeList = parseGraph();
     
     // Run MLS
-    // std::vector<vector<double> > resultsMLS = multiStartLocalSearch(nodeList, runs);
-    // writeToFile(resultsMLS, "MLS.txt");
+    std::vector<vector<double> > resultsMLS = multiStartLocalSearch(nodeList, runs);
+    writeToFile(resultsMLS, "MLS.txt");
 
     // std::vector<vector<double> > kek = MLS_test(nodeList, runs, 0.1);
     // // Run ILS
-    std::vector<vector<double> > resultsILS = iterativeLocalSearch(nodeList, runs, 0.1);
+    // std::vector<vector<double> > resultsILS = iterativeLocalSearch(nodeList, runs, 0.1);
     // writeToFile(resultsILS, "ILS.txt");
 
-    std::vector<vector<double> > resultsGLS = geneticLocalSearch(nodeList,runs, 50);
+    // std::vector<vector<double> > resultsGLS = geneticLocalSearch(nodeList,runs, 50);
     // writeToFile(resultsGLS, "GLS.txt");
 
 } 
