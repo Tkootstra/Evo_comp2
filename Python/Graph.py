@@ -14,6 +14,7 @@ class Graph(object):
         self.net_list = set()
         
     def create_nets(self):
+        # Creates nets and puts them in the node
         nets = []
     
         for n in self.node_list:
@@ -27,6 +28,8 @@ class Graph(object):
     
     
     def define_partitions(self, solution):
+        self.reset_gains()      # test
+        
         for i in range(len(self.node_list)):
             self.node_list[i].belongs_to_partition = solution[i]
             
@@ -77,8 +80,7 @@ class Graph(object):
                     
     
     def compute_initial_gains(self):
-        self.reset_gains()
-        all_gains = []
+        all_gains = []      # For testing purposes
         
         for net in self.net_list:
             if net.is_cut():
@@ -103,23 +105,6 @@ class Graph(object):
             
         self.node_list = new_nodes
 
-
-#        
-#        # Make sure we don't count both ways
-#        to_check = [n for n in self.node_list if n.belongs_to_partition == 0]
-#        
-#        for node in to_check:
-#            p = node.belongs_to_partition
-#            
-#            for idx in node.connection_locations:
-#                pin = self.node_list[idx]
-#                if p != pin.belongs_to_partition:
-#                    node.gain += 1
-#                    pin.gain += 1 
-#                else:
-#                    node.gain -= 1
-#                    pin.gain -= 1
-        
     
 #    def count_single_cell_connections(self, node_index, total):
 ##        total = total_value

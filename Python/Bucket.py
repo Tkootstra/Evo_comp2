@@ -24,8 +24,8 @@ class Bucket(object):
     
     def add_to_bucket(self, partition, key, node):
         if partition == 0:
-            #  dit heb ik toegevoegd, zodat die 
-            # automatische een nieuwe key toevoegt als die nog niet in de dict zit
+            #  dit zou niet nodig moeten zijn aangezien bucket hooguit 
+            # [-17;17] mag zijn
 #            if key not in self.bucketA.keys():
 #                self.bucketA[key] = []
             
@@ -133,6 +133,7 @@ class Bucket(object):
                 
     
     def update_gain_test(self, graph, node_index):
+        # Computes node's neighbours' gains all at once
         graph.compute_gains(node_index)
         
         for idx in graph.node_list[node_index].connection_locations:
@@ -141,15 +142,18 @@ class Bucket(object):
 #            if current.gain < -16 or current.gain > 16:
 #                print(f'{idx}: {current.gain}')
             
+            # Updates bucket
             self.update_bucket(current.belongs_to_partition, current.gain, current)
             
     def init_gain_test(self, graph):
+        # Computes initial gains all at once
         graph.compute_initial_gains()
         
         for node in graph.node_list:
 #            if node.gain < -16 or node.gain > 16:
 #                print(f'{node.index}: {node.gain} initial')
             
+            # Adds to bucket
             self.add_to_bucket(node.belongs_to_partition, node.gain, node)
             
         

@@ -38,6 +38,7 @@ def parse_graph():
         new_node = Node(index, ncon, conlocs)
         nodes.append(new_node)
         
+        # Counts max degree for bucket later on
         if ncon > maxcon:
             maxcon = ncon
     
@@ -83,8 +84,10 @@ def parse_graph():
 
 
 def single_FM_run(graph, maxcon):        
+    # Create a new bucket
     results = Bucket(maxcon)
-        
+    
+    # Compute initial gains    
 #    results.init_gain(graph)
     results.init_gain_test(graph)
     score = results.gain_sum()
@@ -94,11 +97,9 @@ def single_FM_run(graph, maxcon):
     
     while results.bucketA_size > 0:
         node_to_change_A = results.pop_from_bucket_key(0)
-#        node_to_change_A = results.get_best_node(graph, 0)
         graph.node_list[node_to_change_A.index].flip_partition()
         
         node_to_change_B = results.pop_from_bucket_key(1)
-#        node_to_change_B = results.get_best_node(graph, 1)
         graph.node_list[node_to_change_B.index].flip_partition()
         
 #        results.update_gain(graph, node_to_change_A.connection_locations)
@@ -108,6 +109,7 @@ def single_FM_run(graph, maxcon):
         
         score = results.gain_sum()
         
+        # Keep track of best gainSum and its accompanying graph
         if score > best_gain_sum:
             best_gain_sum = score
             best_score_graph = graph
@@ -158,6 +160,8 @@ def MLS(node_list:list, maxcon:int, iterations:int):
     return result_dict
 
 nodes, maxcon = parse_graph()
+
+# Print nodes and connections
 #for n in nodes:
 #    print(f'{n.index}, {len(n.connection_locations)}, {n.connection_locations}')
 
