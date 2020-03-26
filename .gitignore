@@ -1,3 +1,4 @@
 *.plist
 graph_partitioning/main.dSYM
 graph_partitioning/test-main.dSYM/Contents/Resources/DWARF
+Python/__pycache__

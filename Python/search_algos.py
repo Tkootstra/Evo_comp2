@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env pypy
 # -*- coding: utf-8 -*-
 from Graph import Graph
 from Node import Node
@@ -7,40 +7,23 @@ import time
 import random
 
 
-def init_gain(graph, current_bucket):
-    for i in range(len(graph.node_list)):
-        if not graph.node_list[i].is_fixed:
-            current = graph.node_list[i]
-            graph.node_list[current.index].flip_partition()
-            
-            gain = graph.count_single_cell_connections(current.index, 0)
-            # print(gain)
-            graph.node_list[current.index].flip_partition()
-            
-            current_bucket.add_to_bucket(current.belongs_to_partition, gain, current)
-            graph.node_list[i].gain = gain
-    return current_bucket
-                 
+def get_best_solution(graph):
+    sol = [n.belongs_to_partition for n in graph.node_list]
+    return sol
 
-def update_gain(graph, current_bucket, neighbors):
-    for index in neighbors:
-        if not graph.node_list[index].is_fixed:
-            current = graph.node_list[index]
-            graph.node_list[current.index].flip_partition()
-            gain = graph.count_single_cell_connections(current.index, current.gain)
-            graph.node_list[current.index].flip_partition()
-            
-            current_bucket.update_bucket(current.belongs_to_partition, gain, current)
-            graph.node_list[index].gain = gain
+def create_solution(string_length):
+    zeros = [0] * 250
+    ones = [1] * 250
+    z_o = zeros + ones
+
+    sol = random.sample(z_o, string_length)
     
-def get_best_soltution(graph):
-    sol = []
-    for node in graph.node_list:
-        sol.append(node.belongs_to_partition)
     return sol
             
 
 def parse_graph():
+    maxcon = 0
+    
     nodes = []
     file = 'Graph500.txt'
     txt = open(file, "r")
@@ -53,70 +36,146 @@ def parse_graph():
         [conlocs.append(int(x)-1) for x in splitted[3:len(splitted)]]
         new_node = Node(index, ncon, conlocs)
         nodes.append(new_node)
-    
-    
-    return nodes
+        
+        if ncon > maxcon:
+            maxcon = ncon
 
-def single_FM_run(graph):
-    bucketA = dict()
-    bucketB = dict()
+    return nodes, maxcon
+
+#def init_gain(graph, current_bucket):
+#    # This works fine
+#    for i in range(len(graph.node_list)):
+#        current = graph.node_list[i]
+#        
+#        if not current.is_fixed:
+#            graph.node_list[current.index].flip_partition()
+#            gain = graph.count_single_cell_connections(current.index, current.gain)
+#            graph.node_list[current.index].flip_partition()
+#            
+#            if gain < -16 or gain > 16:
+#                print(gain)
+#            
+#            current_bucket.add_to_bucket(current.belongs_to_partition, gain, current)
+#            graph.node_list[i].gain = gain
+#    
+#    return current_bucket
+                  
+
+#def update_gain(graph, current_bucket, neighbors):
+#    # Gains get out of hand, usually towards -20 or -30. -16 should be minimum
+#    for idx in neighbors:
+#        current = graph.node_list[idx]
+#        
+#        if not current.is_fixed:
+#            graph.node_list[current.index].flip_partition()                         # Temp flip
+#            gain = graph.count_single_cell_connections(current.index, current.gain)
+#            graph.node_list[current.index].flip_partition()                         # Flip back
+#            
+#            if gain < -16 or gain > 16:
+#                print(f'{idx}: {current.gain} -> {gain} = {gain - current.gain}')
+#            
+#            current_bucket.update_bucket(current.belongs_to_partition, gain, current)
+#            graph.node_list[idx].gain = gain
+#            
+#    return current_bucket
     
-    results = Bucket(bucketA, bucketB)
-    
-    bucket_A_size = results.bucketA_size
-    
-    results = init_gain(graph, results)
+
+
+def single_FM_run(graph, maxcon:int):
+    bucketA = {key: [] for key in range(-(maxcon + 1), maxcon + 2)} # [-17;17]
+    bucketB = bucketA.copy()
+        
+    results = Bucket(bucketA, bucketB, maxcon)
+        
+#    results.init_gain(graph)
+    results.init_gain_test(graph)
     score = results.gain_sum()
     
     best_gain_sum = score
     best_score_graph = graph
     
-    while bucket_A_size > 0:
+    while results.bucketA_size > 0:
         node_to_change_A = results.pop_from_bucket_key(0)
         graph.node_list[node_to_change_A.index].flip_partition()
         
         node_to_change_B = results.pop_from_bucket_key(1)
         graph.node_list[node_to_change_B.index].flip_partition()
-        results = update_gain(graph, results, node_to_change_A.connection_locations)
-        results = update_gain(graph, results, node_to_change_B.connection_locations)
+        
+#        results.update_gain(graph, node_to_change_A.connection_locations)
+#        results.update_gain(graph, node_to_change_B.connection_locations)
+        results.update_gain_test(graph, node_to_change_A.index)
+        results.update_gain_test(graph, node_to_change_B.index)
+        
         score = results.gain_sum()
-        bucket_A_size = results.bucketA
         
         if score > best_gain_sum:
             best_gain_sum = score
             best_score_graph = graph
         
     best_score = best_score_graph.count_connections()
-    best_score_solution = get_best_soltution(best_score_graph)
+    best_score_solution = get_best_solution(best_score_graph)
+    
     return best_score, best_score_solution
 
-def create_solution(string_length):
     
-    values = []
-    for s in range(string_length):
-        values.append(random.randint(0, 1))
-#        values = np.random.randint(2, size=string_length)
-    return values
-
+def MLS(node_list:list, maxcon, iterations:int):
+#    best_score = 2564
     
-def MLS(node_list:list, iterations:int):
+    print('hoi')
+    
+    i = 0
+    result_dict = {key:[] for key in ['score', 'time']}
+    
     start = time.time()
-    result_dict = {key:[] for key in ['best_score', 'time']}
+    graaf = Graph(node_list)
+    print('created graph')
+    graaf.define_partitions(create_solution(500))
+    print('defined partitions')
+    score, solution = single_FM_run(graaf, maxcon)
+    print('single run')
+    i += 1
     
-    for i in range(iterations):
-        graaf = Graph(node_list)
-        graaf.define_partitions(create_solution(500))
-        best_score, best_score_solution = single_FM_run(graaf)
-        dur = time.time() - start
-        result_dict['best_score'].append(best_score)
-        result_dict['time'].append(dur)
-        print("Iteration: {}, Score: {}, Time: {}, s.".format(i+1, best_score, dur))
+    
+    dur = time.time() - start
+    result_dict['score'].append(score)
+    result_dict['time'].append(dur)
+    print(f"Iteration: {i}, Score: {score}, Time: {dur}s.")
+    
+    while i < iterations:
+        start = time.time()
+        graaf_ = Graph(node_list)
+        graaf_.define_partitions(solution)
+        score_, solution_ = single_FM_run(graaf_, maxcon)
+        i += 1
+        
+        if score_ < score:
+            score, solution = score_, solution_  
+            
+            dur = time.time() - start
+            result_dict['score'].append(score)
+            result_dict['time'].append(dur)
+            print(f"Iteration: {i}, Score: {score}, Time: {dur}s.")
+            
+        else:
+            # Create new solution, aka start anew
+            start = time.time()
+            graaf = Graph(node_list)
+            graaf.define_partitions(create_solution(500))
+            score, solution = single_FM_run(graaf, maxcon)
+            i += 1
+            
+            dur = time.time() - start
+            result_dict['score'].append(score)
+            result_dict['time'].append(dur)
+            print(f"Iteration: {i}, Score: {score}, Time: {dur}s.")
     
     return result_dict
 
-nodes = parse_graph()
+nodes, maxcon = parse_graph()
+#for n in nodes:
+#    print(f'{n.index}, {len(n.connection_locations)}, {n.connection_locations}')
 
-res = MLS(nodes, 10)
+res = MLS(nodes, maxcon, 10)
 
         
         
