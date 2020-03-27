@@ -51,6 +51,7 @@ def single_FM_run(graph, maxcon):
     # Compute initial gains    
     graph.compute_initial_gains()
     score = graph.calc_gain_sum()
+#    print(score)
     
     best_gain_sum = score
     best_score_graph = graph
@@ -66,35 +67,40 @@ def single_FM_run(graph, maxcon):
         graph.compute_gains(node_to_change_B)
         
         score = graph.calc_gain_sum()
+#        print(score)
         
         # Keep track of best gainSum and its accompanying graph
         if score > best_gain_sum:
+            print('hoi')
             best_gain_sum = score
             best_score_graph = deepcopy(graph)
         
     best_score = best_score_graph.count_connections()
     best_score_solution = get_best_solution(best_score_graph)
+    end_score = graph.count_connections()
+    end_solution = get_best_solution(graph)
     
-    return best_score, best_score_solution
+    return best_score, best_score_solution, end_score, end_solution
 
 def local_search(graaf, stop):
 #    best_graph = graaf
 #    best_score = 2564
     scores = []
+    best_scores = []
     
     for i in range(stop):
-        score, solution = single_FM_run(graaf, 16)
-        print(solution[:10])
-        graaf.define_partitions(solution)
+        score, solution, sc, sol = single_FM_run(graaf, 16)
+#        print(sol[:5], solution[:5])
+        graaf.define_partitions(sol)
         
-        scores.append(score)
+        scores.append(sc)
+        best_scores.append(score)
         
-    return scores
+    return scores, best_scores
         
 
-def MLS_test(node_list, iterations):
+def MLS_test(node_list, iterations, stop):
     i = 0
-    stop = 10
     results = []
 
     graaf = Graph(node_list)
@@ -102,10 +108,10 @@ def MLS_test(node_list, iterations):
     graaf.define_partitions(solution)
     
     while i < iterations:
-        result = local_search(graaf, stop)
+        result, result_ = local_search(graaf, stop)
         i += stop
         results.append(result)
-        print(f'It {i}, score {result}')
+        print(f'It {i}, score {result}, best_score{result_}')
         solution = create_solution(500)
         graaf.define_partitions(solution)
  
@@ -175,7 +181,7 @@ nodes, maxcon = parse_graph()
 #    print(f'{n.index}, {len(n.connection_locations)}, {n.connection_locations}')
 
 #res = MLS(nodes, maxcon, 100)
-MLS_test(nodes, 100)
+MLS_test(nodes, 10, 10)
 
 # Test of het iets te maken heeft met hergebruiken van solutions
 #graaf = Graph(nodes)

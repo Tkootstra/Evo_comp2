@@ -121,23 +121,36 @@ class Graph(object):
             new_nodes.append(node)
             
         self.node_list = new_nodes
+    
+    def loop_nodes(self, bucket, high_gain):
+        best_node = None
         
+        for node in bucket:
+            if node.gain > high_gain:
+                if not node.is_fixed:
+                    node.is_fixed = True
+                    high_gain = node.gain
+                    best_node = node
+                    
+        return best_node, high_gain
+    
+    
     def get_best_node(self, partition):
         bucket = [n for n in self.node_list if n.belongs_to_partition == partition]
         
         high_gain = -500
         best_node = None
         
-        for node in bucket:
-            if node.gain > high_gain:
-                high_gain = node.gain
-                best_node = node
+        best_node, high_gain = self.loop_nodes(bucket, high_gain)
+        
+        while best_node is None:
+            best_node, high_gain = self.loop_nodes(bucket, high_gain - 1)
         
         self.partition_size -= 1
         return best_node
 
     def calc_gain_sum(self):
-        return sum([n.gain for n in self.node_list])
+        return sum([n.gain for n in self.node_list if not n.is_fixed])
     
     def flip_partition(self, node_index):
         self.node_list[node_index].flip_partition()
