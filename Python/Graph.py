@@ -10,10 +10,12 @@ from copy import deepcopy
 
 class Graph(object):
     
-    def __init__(self, node_list):
+    def __init__(self, node_list, solution):
         self.node_list = node_list
         self.net_list = set()
         self.partition_size = 250
+        
+        self.define_partitions(solution)
         
     def __deepcopy__(self, memo):
         cls = self.__class__
@@ -38,7 +40,7 @@ class Graph(object):
     
     
     def define_partitions(self, solution):
-        self.reset_gains() 
+#        self.reset_gains() 
         
         for i in range(len(self.node_list)):
             self.node_list[i].belongs_to_partition = solution[i]
@@ -121,30 +123,31 @@ class Graph(object):
             new_nodes.append(node)
             
         self.node_list = new_nodes
+        self.partition_size = 250
     
     def loop_nodes(self, bucket, high_gain):
         best_node = None
         
         for node in bucket:
-            if node.gain > high_gain:
+            if node.gain == high_gain:
                 if not node.is_fixed:
-                    node.is_fixed = True
-                    high_gain = node.gain
-                    best_node = node
+                    self.node_list[node.index].is_fixed = True
+                    return node
                     
-        return best_node, high_gain
+        return best_node
     
     
     def get_best_node(self, partition):
         bucket = [n for n in self.node_list if n.belongs_to_partition == partition]
-        
-        high_gain = -500
+                
+        gains = [n.gain for n in bucket]
+        high_gain = max(gains)
         best_node = None
+
         
-        best_node, high_gain = self.loop_nodes(bucket, high_gain)
-        
-        while best_node is None:
-            best_node, high_gain = self.loop_nodes(bucket, high_gain - 1)
+        while best_node is None and high_gain > -30:
+            best_node = self.loop_nodes(bucket, high_gain)
+            high_gain -= 1
         
         self.partition_size -= 1
         return best_node
