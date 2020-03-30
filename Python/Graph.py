@@ -8,6 +8,7 @@ Created on Thu Mar 26 09:17:12 2020
 from Net import Net
 from copy import deepcopy
 from Node import Node
+import time
 
 class Graph(object):
     
@@ -49,6 +50,8 @@ class Graph(object):
         self.create_nets()
     
     def count_connections(self):
+        self.create_nets()
+        
         total = 0
         for net in self.net_list:
             if net.is_cut():
@@ -126,57 +129,11 @@ class Graph(object):
         self.node_list = new_nodes
         self.free_nodes = 250
     
-    def loop_nodes(self, bucket, high_gain):
-        best_node = None
-        # kun je hier niet beter een bool inbouwen ofzo? 
-        # want dan kun je checken of die de node gevonden heeft
-        for node in bucket:
-            if node.gain == high_gain:
-                if not node.is_fixed:
-                    self.node_list[node.index].is_fixed = True
-                    # node.is_fixed = True
-                    return self.node_list[node.index]
-                    
-        return best_node
-    
-    def loop_nodes_test(self, bucket, high_gain):
-        best_node = None
-        # kun je hier niet beter een bool inbouwen ofzo? 
-        # want dan kun je checken of die de node gevonden heeft
-        for node in bucket:
-            if node.gain == high_gain:
-                if not node.is_fixed:
-                    self.node_list[node.index].is_fixed = True
-                    temp_node = Node(node.index, node.number_of_connections, node.connection_locations)
-                    temp_node.gain = node.gain
-                    temp_node.is_fixed = node.is_fixed
-                    temp_node.belongs_to_partition = node.belongs_to_partition
-                    temp_node.localnets = node.localnets
-                    
-                    return temp_node
-        # print('return gaat niet goed')
-        return best_node
-    
     
     def get_best_node(self, partition):
         bucket = [n for n in self.node_list if n.belongs_to_partition == partition]
-                
-        # gains = [n.gain for n in bucket]
-        # high_gain = max(gains)
-        # best_node = None
-        
-
-        
-        # while best_node is None and high_gain > -30:
-        #     best_node = self.loop_nodes(bucket, high_gain)
-        #     # print(type(best_node))
             
-        #     high_gain -= 1
-            
-    
-        
         gains = [(n.gain, n) for n in bucket if not n.is_fixed]
-        # print(f'gain len {len(gains)}')
         best_node = max(gains, key=lambda item:item[0])[1]
         
         self.free_nodes -= 1
@@ -191,25 +148,11 @@ class Graph(object):
     def flip_partition(self, node_index):
         self.node_list[node_index].flip_partition()
         self.node_list[node_index].is_fixed = True
-        self.create_nets()
+#        self.create_nets()
         
 
     
-#    def count_single_cell_connections(self, node_index, total):
-##        total = total_value
-#        checknode = self.node_list[node_index]
-#        
-#        for loc in checknode.connection_locations:
-#            
-#            if not self.node_list[loc].is_fixed:
-#                if self.node_list[loc].belongs_to_partition != checknode.belongs_to_partition:
-#                    total += 1
-#                else:
-#                    total -= 1
-#                        
-#        return total
-#                    
-            
+
             
             
     
