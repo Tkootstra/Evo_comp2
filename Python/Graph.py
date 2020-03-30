@@ -40,17 +40,27 @@ class Graph(object):
                         
         self.net_list = set(nets)
     
+    def update_nets(self, node_index):
+        node = self.node_list[node_index]
+        
+        for p in node.connection_locations:
+            new_net = Net(node, self.node_list[p])
+            
+            self.net_list.remove(new_net)
+            self.net_list.add(new_net)
     
     def define_partitions(self, solution):
-        self.reset_gains() 
+#        self.reset_gains() 
         
         for i in range(len(self.node_list)):
             self.node_list[i].belongs_to_partition = solution[i]
+            self.node_list[i].is_fixed = False
+            self.node_list[i].gain = 0
         
         self.create_nets()
     
     def count_connections(self):
-        self.create_nets()
+#        self.create_nets()
         
         total = 0
         for net in self.net_list:
@@ -58,14 +68,6 @@ class Graph(object):
                 total += 1
                 
         return total
-        
-#        total = 0
-#        for node in self.node_list:
-#            if node.belongs_to_partition == 0:
-#                for loc in node.connection_locations:
-#                    if self.node_list[loc].belongs_to_partition == 1:
-#                        total += 1
-#        return total
     
     def compute_gains(self, checknode):
 #        checknode = self.node_list[node_index]
@@ -145,10 +147,12 @@ class Graph(object):
     def calc_gain_sum(self):
         return sum([n.gain for n in self.node_list if not n.is_fixed])
     
+    
     def flip_partition(self, node_index):
         self.node_list[node_index].flip_partition()
         self.node_list[node_index].is_fixed = True
-#        self.create_nets()
+        
+        self.update_nets(node_index)
         
 
     

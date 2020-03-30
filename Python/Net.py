@@ -18,14 +18,6 @@ class Net(object):
     def __eq__(self, other):        # Allows it to be a set
         return (self.indices[0] == other.indices[0] and self.indices[1] == other.indices[1]) or \
                (self.indices[1] == other.indices[0] and self.indices[0] == other.indices[1])
-#    
-#    def __eq__(self, other):
-#        if not isinstance(other, type(self)):
-#            return False
-#        return True
-#    
-#def __hash__(self):
-#        return hash((self.nodes[0], self.nodes[1]))
 
     def __hash__(self):             # Allows it to be a set
         return hash(self.indices)

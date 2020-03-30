@@ -10,7 +10,7 @@ from copy import deepcopy
 import numpy as np
 
 
-def get_best_solution(node_list):
+def get_solution_from_nodes(node_list):
     sol = [n.belongs_to_partition for n in node_list]
     return sol
 
@@ -67,87 +67,78 @@ def parse_graph():
     return nodes, maxcon
     
 
-def single_FM_run(graph, maxcon):               
-    # Compute initial gains 
-    start = time.time()
-    
+def single_FM_run(graph): 
+    best_score = 9999
+    best_gainsum = -9999
+    best_sol = None
+              
+    # Compute initial gains     
     graph.compute_initial_gains()
-    # print(f'gains {time.time() - start}')
-    
-    start = time.time()
-    score = graph.calc_gain_sum()
-    # print(f'gainsum {time.time() - start}')
-    
-#    best_gain_sum = score
-#    best_score = None
-#    best_score_solution = None
-    
 
     start = time.time()
     while graph.free_nodes > 0:
         start0 = time.time()
         node_to_change_A = graph.get_best_node(0)
-        getnode0 = time.time() - start0
-        # print(f'getnode 0 {time.time() - start1}')
+#        getnode0 = time.time() - start0
         
-        start1 = time.time()
+#        start1 = time.time()
         graph.flip_partition(node_to_change_A.index)
-        flip0 = time.time() - start1
+#        flip0 = time.time() - start1
         
-        start1 = time.time()
+#        start1 = time.time()
         node_to_change_B = graph.get_best_node(1)
-        getnode1 = time.time() - start1
-        # print(f'getnode 1 {time.time() - start1}')
+#        getnode1 = time.time() - start1
         
-        start1 = time.time()
+#        start1 = time.time()
         graph.flip_partition(node_to_change_B.index)
-        flip1 = time.time() - start1
+#        flip1 = time.time() - start1
         
-        start1 = time.time()
+#        start1 = time.time()
         graph.compute_gains(node_to_change_A)
-        gain0 = time.time() - start1
+#        gain0 = time.time() - start1
         
-        start1 = time.time()
+#        start1 = time.time()
         graph.compute_gains(node_to_change_B)
-        gain1 = time.time() - start1
+#        gain1 = time.time() - start1
         
+#        start1 = time.time()
+        score = graph.count_connections()
                 
+        if score < best_score:            
+            best_score = score
+            best_sol = get_solution_from_nodes(graph.node_list)
         
-        looptime = time.time() - start0
-        if looptime > 1:
-            print(f'{looptime}, gn {getnode0}, gn {getnode1}, f {flip0}, f {flip1}, g {gain0}, g {gain1}, \n')
+#        counttime = time.time() - start1
         
-#        print(f'loop {time.time() - start}')
-       
-#    start = time.time()
-    end_score = graph.count_connections()
-#    start = time.time()
-    end_solution = get_best_solution(graph.node_list)
-#     print(" getting best solution: {}".format(time.time() - start))
-    
-    
-    return end_score, end_solution
+#        looptime = time.time() - start0
+#        if graph.free_nodes % 100 == 0:
+#            print(f'loop {looptime}') #: ct {counttime}, gn {getnode0}, gn {getnode1}, f {flip0}, f {flip1}, g {gain0}, g {gain1}, \n')
+              
+    return best_score, best_sol
 
-def local_search(node_list, solution):
+def local_search(node_list, solution, i, iterations):
     begin = time.time()
     best = 9999 
 
-    i = 0
-    while(True):        
+    local_i = 0
+    
+    while(i < iterations):     
+        start = time.time()
         graaf = Graph(node_list, solution)
         
-        sc, solution = single_FM_run(graaf, 16)        
+        sc, solution = single_FM_run(graaf)        
+        local_i += 1
         i += 1
         
-        if sc > best:
+        if sc >= best: # score is worse
             break
         else:
             best = sc
-#        print('single FM: {}'.format(time.time() - start))
+#        print('single FM: {}, score {}'.format(time.time() - start, sc))
     
     dur = time.time() - begin
 
-    return best, i, dur, solution
+    return best, local_i, dur, solution
         
 
 def MLS(node_list, iterations):
@@ -159,7 +150,7 @@ def MLS(node_list, iterations):
     solution = create_solution(500)
     
     while i < iterations:
-        result, i_, dur, sol = local_search(node_list, solution)
+        result, i_, dur, sol = local_search(node_list, solution, i, iterations)
         i += i_
 
         solution = create_solution(500)
@@ -167,39 +158,41 @@ def MLS(node_list, iterations):
         result_dict['iter'].append(i)
         result_dict['score'].append(result)
         result_dict['time'].append(dur)
-        print(f'{i}: {result}, {round(dur, 3)}')
+        print(f'{i}: Endscore: {result}, Mean duration: {round(dur / i_, 3)}')
     
     return result_dict
 
-def ILS(node_list:list, iterations:int):
+def ILS(node_list:list, iterations:int, rate=0.1):
     print('Running ILS...')
     
     result_dict = {key: [] for key in ['iter', 'score', 'time']}
     start = time.time()
 
-    i=0
+    i = 0
     
     solution = create_solution(500)
     
-    prev, i_, _, prev_solution = local_search(node_list, solution)
-    temp = mutate_solution(prev_solution, 0.1)
-    i+=i_
+    prev, i_, _, prev_solution = local_search(node_list, solution, i, iterations)
+    temp = mutate_solution(prev_solution, rate)
+    i += i_
     dur = time.time() - start
     
     result_dict['iter'].append(i)
     result_dict['score'].append(prev)
     result_dict['time'].append(dur)
     
+    print(f'{i}: Endscore: {prev}, Mean duration: {round(dur / i_, 3)} ({i_} passes)')
+    
     while i < iterations:
         start = time.time()
-        current, i_, _, current_solution = local_search(node_list, temp)
+        current, i_, _, current_solution = local_search(node_list, temp, i, iterations)
         i+=i_
         
         if current < prev:
             temp = current_solution
             prev = current
         else:
-            temp = mutate_solution(current_solution, 0.1)
+            temp = mutate_solution(temp, rate)
 
         dur = time.time() - start
         
@@ -207,7 +200,8 @@ def ILS(node_list:list, iterations:int):
         result_dict['score'].append(current)
         result_dict['time'].append(dur)
         
-        print(f'{i}: {current}, {round(dur, 3)}')
+        
+        print(f'{i}: Endscore: {current}, Mean duration: {round(dur / i_, 3)} ({i_} passes)')
         # mutate je prev solution
         # Als dit beter is, ga verder met dit resultaat
         # Anders: mutate prev solution opnieuw en doe bovenstaand opnieuw
@@ -219,7 +213,7 @@ def ILS(node_list:list, iterations:int):
 nodes, maxcon = parse_graph()
 
 #res_MLS = MLS(nodes, 100)
-res_ILS = ILS(nodes, 1000)
+res_ILS = ILS(nodes, 100, rate=0.1)
 
 
 
