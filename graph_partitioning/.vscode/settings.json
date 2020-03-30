@@ -72,5 +72,6 @@
         "*.tcc": "cpp",
         "clocale": "cpp",
         "memory_resource": "cpp"
-    }
+    },
+    "python.pythonPath": "/home/timo/anaconda3/envs/evocomp/bin/python"
 }
