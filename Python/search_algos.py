@@ -130,13 +130,14 @@ def single_FM_run(graph, maxcon):
     
         
     # Compute initial gains 
-#    start = time.time()
-    graph.compute_initial_gains()
-#    print(f'gains {time.time() - start}')
+    start = time.time()
     
-#    start = time.time()
+    graph.compute_initial_gains()
+    # print(f'gains {time.time() - start}')
+    
+    start = time.time()
     score = graph.calc_gain_sum()
-#    print(f'gainsum {time.time() - start}')
+    # print(f'gainsum {time.time() - start}')
 #    print(score)
     
     best_gain_sum = score
@@ -147,44 +148,45 @@ def single_FM_run(graph, maxcon):
     
     
     
-#    start = time.time()
+    start = time.time()
     while graph.free_nodes > 0:
         # print(f'free nodes {graph.free_nodes}')
-        # start1 = time.time()
+        start1 = time.time()
         node_to_change_A = graph.get_best_node(0)
         # print("best node is {}".format(node_to_change_A.index))
         # print(f'getnode 0 {time.time() - start1}')
         graph.flip_partition(node_to_change_A.index)
         
-        # start1 = time.time()
+        start1 = time.time()
         node_to_change_B = graph.get_best_node(1)
         # print(f'getnode 1 {time.time() - start1}')
         graph.flip_partition(node_to_change_B.index)
-        
+        # start = time.time()
         graph.compute_gains(node_to_change_A)
         graph.compute_gains(node_to_change_B)
         
         score = graph.calc_gain_sum()
+        # print('compute gains: {}'.format(time.time() - start))
 #        print(score)
         
         # Keep track of best gainSum and its accompanying graph
-        if score > best_gain_sum:
-            best_gain_sum = score
-            best_score = graph.count_connections()
-            best_score_solution = get_best_solution(graph.node_list)
         
-#    print(f'loops {time.time() - start}')
+        
+    # print(f'loops {time.time() - start1}')
        
 #    best_score = best_score_graph.count_connections()
 #    best_score_solution = get_best_solution(best_score_graph)
+    start = time.time()
     end_score = graph.count_connections()
+    start = time.time()
     end_solution = get_best_solution(graph.node_list)
+    # print(" getting best solution: {}".format(time.time() - start))
     
     
     
     
     
-    return best_score, best_score_solution, end_score, end_solution
+    return end_score, end_solution
 
 def local_search(node_list, solution):
     begin = time.time()
@@ -195,12 +197,12 @@ def local_search(node_list, solution):
     # print(solution[:10])
     i = 0
     while(True):
-        # start = time.time()
+        start = time.time()
         
         graaf = Graph(node_list, solution)
         # print(f'graaf {time.time() - start}')
         
-        score, sol, sc, solution = single_FM_run(graaf, 16)
+        sc, solution = single_FM_run(graaf, 16)
         # print('fblsfpibeflbflffbel')
         # print(f'{i}: {sc}, {time.time() - start}, {score}, {solution[:10]}')
         
@@ -212,7 +214,7 @@ def local_search(node_list, solution):
             break
         else:
             best = sc
-        
+        print('single FM: {}'.format(time.time() - start))
     dur = time.time() - begin
     # print('done with current pass')    
     return best, i, dur, solution
@@ -226,7 +228,7 @@ def MLS(node_list, iterations):
     solution = create_solution(500)
     
     while i < iterations:
-        result, i_, dur = local_search(node_list, solution)
+        result, i_, dur, sol = local_search(node_list, solution)
         i += i_
         results.append(result)
         # print(f'It {i}, score {result}, best_score{result_}')
@@ -307,7 +309,8 @@ def flip_bit(bit):
 
 nodes, maxcon = parse_graph()
 
-res = ILS(nodes, 100)
+# res = ILS(nodes, 100)
+res = MLS(nodes, 100)
 # Print nodes and connections
 #for n in nodes:
 #    print(f'{n.index}, {len(n.connection_locations)}, {n.connection_locations}')
