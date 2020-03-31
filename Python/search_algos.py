@@ -213,7 +213,7 @@ def ILS(node_list:list, iterations:int, rate=0.1):
 nodes, maxcon = parse_graph()
 
 #res_MLS = MLS(nodes, 100)
-res_ILS = ILS(nodes, 100, rate=0.1)
+res_ILS = ILS(nodes, 1000, rate=0.1)
 
 
 

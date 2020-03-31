@@ -32,6 +32,7 @@ class Graph(object):
         nets = []
     
         for n in self.node_list:
+            n.localnets = []
             for p in n.connection_locations:
                 new_net = Net(n, self.node_list[p])
         
