@@ -209,10 +209,42 @@ def ILS(node_list:list, iterations:int, rate=0.1):
     return result_dict
 
 
+def GLS(node_list:list, iterations:int, population_size=50):
+    
+    print('Running GLS...')
+    result_dict = {key: [] for key in ['iter', 'score', 'time']}
+    population = []
+    for ii in range(population_size):
+        population.append(create_solution(500))
+    
+    start = time.time()
+    i = 0
+    
+    while i < iterations:
+        worst_score = 99999
+        
+        for solution in population: 
+            # check the performance of all solution first
+            
+            
+            
+            graaf = Graph(node_list, solution)
+            graaf.compute_initial_gains()
+            gains = [graaf.compute_gains(node) for node in graaf.node_list]
+            result, i_, dur, sol = local_search(node_list, solution, i, iterations)
+    
+            if result > worst_score:
+                worst_score = result
+                worst_sol = sol
+            
+            
+                
+            
+            
 
 nodes, maxcon = parse_graph()
 
-#res_MLS = MLS(nodes, 100)
+res_MLS = MLS(nodes, 100)
 res_ILS = ILS(nodes, 1000, rate=0.1)
 
 

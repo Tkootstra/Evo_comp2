@@ -30,9 +30,10 @@ class Graph(object):
     def create_nets(self):
         # Creates nets and puts them in the node
         nets = []
-    
         for n in self.node_list:
             n.localnets = []
+            nets = []
+            
             for p in n.connection_locations:
                 new_net = Net(n, self.node_list[p])
         
@@ -46,7 +47,6 @@ class Graph(object):
         
         for p in node.connection_locations:
             new_net = Net(node, self.node_list[p])
-            
             self.net_list.remove(new_net)
             self.net_list.add(new_net)
     
