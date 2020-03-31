@@ -32,7 +32,7 @@ class Graph(object):
         nets = []
         for n in self.node_list:
             n.localnets = []
-            nets = []
+            
             
             for p in n.connection_locations:
                 new_net = Net(n, self.node_list[p])
@@ -63,11 +63,7 @@ class Graph(object):
     def count_connections(self):
 #        self.create_nets()
         
-        total = 0
-        for net in self.net_list:
-            if net.is_cut():
-                total += 1
-                
+        total = len([net for net in self.net_list if net.is_cut()])
         return total
     
     def compute_gains(self, checknode):
@@ -106,7 +102,6 @@ class Graph(object):
                     
     
     def compute_initial_gains(self):
-        all_gains = []      # For testing purposes
         
         for net in self.net_list:
             if net.is_cut():
@@ -115,9 +110,6 @@ class Graph(object):
             else:
                 net.nodes[0].gain -= 1
                 net.nodes[1].gain -= 1
-                
-            all_gains.append(net.nodes[0].gain)
-            all_gains.append(net.nodes[1].gain)
             
 #        print(f'Max init: {max(all_gains)}')
         
@@ -134,9 +126,8 @@ class Graph(object):
     
     
     def get_best_node(self, partition):
-        bucket = [n for n in self.node_list if n.belongs_to_partition == partition]
-            
-        gains = [(n.gain, n) for n in bucket if not n.is_fixed]
+        
+        gains = [(n.gain, n) for n in self.node_list if not n.is_fixed and n.belongs_to_partition == partition]
         best_node = max(gains, key=lambda item:item[0])[1]
         
         self.free_nodes -= 1
