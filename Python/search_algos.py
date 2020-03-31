@@ -59,18 +59,6 @@ def uniform_crossover(parent1, parent2):
     for missing in sample_indices:
         child[missing] = sample_pool.pop()
     return child
-    
-    
-        
-    
-    
-    
-            
-    
-    
-        
-        
-        
 
 def mutate_solution(solution, rate):
     list0 = [i for i, v in enumerate(solution) if v == 0]
@@ -110,10 +98,9 @@ def parse_graph():
         nodes.append(new_node)
         
         # Counts max degree for bucket later on
-        if ncon > maxcon:
-            maxcon = ncon
+        
     
-    return nodes, maxcon
+    return nodes
     
 
 def single_FM_run(graph): 
@@ -192,33 +179,67 @@ def local_search(node_list, solution, i, iterations):
 
     return best, i, dur, solution 
 
-def MLS_loop(result_dict, )        
+      
 
-def MLS(node_list, iterations, stop_time, criterion):
+def MLS_iter(node_list, iterations):
     print('Running MLS...')
     
-    result_dict = {key: [] for key in ['iter', 'score', 'time']}
-    i = 0
+    result_dict = {key: [] for key in ['iter', 'score', 'time', 'passes']}
 
+    i = 0
+    
     solution = create_solution(500)
     
     while i < iterations:
+        prev_i = i
         result, i_, dur, sol = local_search(node_list, solution, i, iterations)
         i = i_
-
+        delta_i = i - prev_i
         solution = create_solution(500)
 
         result_dict['iter'].append(i)
         result_dict['score'].append(result)
         result_dict['time'].append(dur)
+        result_dict['passes'].append(delta_i)
         print(f'{i}: Endscore: {result}, Mean duration: {round(dur / i_, 3)}')
     
     return result_dict
 
-def ILS(node_list:list, iterations:int, rate=0.1):
+
+def MLS_time(node_list, iterations, stop_time):
+    print('Running MLS...')
+    
+    result_dict = {key: [] for key in ['iter', 'score', 'time', 'passes']}
+
+    i = 0
+    total_dur = 0
+    print(total_dur)
+    solution = create_solution(500)
+    
+    while i < iterations and total_dur < stop_time:
+        prev_i = i
+        result, i_, dur, sol = local_search(node_list, solution, i, iterations)
+        i = i_
+        delta_i = i - prev_i
+        
+        solution = create_solution(500)
+
+        result_dict['iter'].append(i)
+        result_dict['score'].append(result)
+        result_dict['time'].append(dur)
+        result_dict['passes'].append(delta_i)
+        print(f'{i}: Endscore: {result}, Mean duration: {round(dur / i_, 3)}')
+        total_dur += dur
+
+    
+    return result_dict
+
+
+
+def ILS_iter(node_list:list, iterations:int, rate=0.1):
     print('Running ILS...')
     
-    result_dict = {key: [] for key in ['iter', 'score', 'time']}
+    result_dict = {key: [] for key in ['iter', 'score', 'time', 'passes']}
     start = time.time()
 
     i = 0
@@ -234,8 +255,9 @@ def ILS(node_list:list, iterations:int, rate=0.1):
     result_dict['iter'].append(i)
     result_dict['score'].append(prev)
     result_dict['time'].append(dur)
+    result_dict['passes'].append(delta_i)
     
-    print(f'{i}: Endscore: {prev}, Mean duration: {round(dur / delta_i, 3)} ({delta_i} passes)')
+    # print(f'{i}: Endscore: {prev}, Mean duration: {round(dur / delta_i, 3)} ({delta_i} passes)')
     
     while i < iterations:
         start = time.time()
@@ -255,9 +277,65 @@ def ILS(node_list:list, iterations:int, rate=0.1):
         result_dict['iter'].append(i)
         result_dict['score'].append(current)
         result_dict['time'].append(dur)
+        result_dict['passes'].append(delta_i)
         
         
+        # print(f'{i}: Endscore: {current}, Mean duration: {round(dur / delta_i, 3)} ({delta_i} passes)')
+        # mutate je prev solution
+        # Als dit beter is, ga verder met dit resultaat
+        # Anders: mutate prev solution opnieuw en doe bovenstaand opnieuw
+    
+    return result_dict
+
+def ILS_time(node_list:list, iterations:int, stop_time:int, rate=0.1):
+    print('Running ILS...')
+    
+    result_dict = {key: [] for key in ['iter', 'score', 'time', 'passes']}
+    start = time.time()
+
+    i = 0
+    total_dur = 0
+    solution = create_solution(500)
+    prev_i = i
+    prev, i_, _, prev_solution = local_search(node_list, solution, i, iterations)
+    temp = mutate_solution(prev_solution, rate)
+    i = i_
+    delta_i = i - prev_i
+    dur = time.time() - start
+    
+    
+    
+    print(f'{i}: Endscore: {prev}, Mean duration: {round(dur / delta_i, 3)} ({delta_i} passes)')
+    result_dict['iter'].append(i)
+    result_dict['score'].append(prev)
+    result_dict['time'].append(dur)
+    result_dict['passes'].append(delta_i)
+    
+    while i < iterations and total_dur < stop_time:
+        start = time.time()
+        prev_i = i
+        current, i_, _, current_solution = local_search(node_list, temp, i, iterations)
+        
+        i = i_
+        delta_i = i - prev_i
+        
+        if current < prev:
+            temp = current_solution
+            prev = current
+        else:
+            temp = mutate_solution(temp, rate)
+
+        dur = time.time() - start
+        
+        result_dict['iter'].append(i)
+        result_dict['score'].append(current)
+        result_dict['time'].append(dur)
+        result_dict['passes'].append(delta_i)
+        global_dur = time.time() - start
+       
+
         print(f'{i}: Endscore: {current}, Mean duration: {round(dur / delta_i, 3)} ({delta_i} passes)')
+        total_dur += global_dur
         # mutate je prev solution
         # Als dit beter is, ga verder met dit resultaat
         # Anders: mutate prev solution opnieuw en doe bovenstaand opnieuw
@@ -265,10 +343,9 @@ def ILS(node_list:list, iterations:int, rate=0.1):
     return result_dict
 
 
-def GLS(node_list:list, iterations:int, population_size=50):
-    
+def GLS_iter(node_list:list, iterations:int, population_size=50):
     print('Running GLS...')
-    result_dict = {key: [] for key in ['iter', 'score', 'time', 'event']}
+    result_dict = {key: [] for key in ['iter', 'score', 'time', 'event','passes']}
     population = []
     for ii in range(population_size):
         population.append(create_solution(500))
@@ -281,18 +358,21 @@ def GLS(node_list:list, iterations:int, population_size=50):
         
         for idx, solution in enumerate(population): 
             # check the performance of all solution first
-            
+            prev_i = i
             result, i_, dur, sol = local_search(node_list, solution, i, iterations)
             if result is None:
                 cont = False
                 print('breaking')
                 break
             
+            
             i = i_  
+            delta_i = i - prev_i
             result_dict['iter'].append(i)
             result_dict['score'].append(result)
             result_dict['time'].append(dur)
             result_dict['event'].append('normal')
+            result_dict['passes'].append(delta_i)
             if result > worst_score:
                 worst_score = result
                 worst_idx = idx
@@ -307,8 +387,10 @@ def GLS(node_list:list, iterations:int, population_size=50):
             while pa1 == pa2:
                 pa2 = random.randint(0, population_size-1)
             child = uniform_crossover(population[pa1], population[pa2])
+            prev_i = i
             child_score, i_, dur, _  = local_search(node_list, child, i, iterations)
             i = i_
+            delta_i = i - prev_i
             if child_score <= worst_score:
                 population[worst_idx] = child
             dur = time.time() - begin
@@ -316,16 +398,78 @@ def GLS(node_list:list, iterations:int, population_size=50):
             result_dict['score'].append(child_score)
             result_dict['time'].append(dur)
             result_dict['event'].append('crossover')
-            
+            result_dict['passes'].append(delta_i)
     return result_dict
     
+def GLS_time(node_list:list, iterations:int, stop_time, population_size=50):
+    print('Running GLS...')
+    result_dict = {key: [] for key in ['iter', 'score', 'time', 'event','passes']}
+    population = []
+    for ii in range(population_size):
+        population.append(create_solution(500))
+    total_dur = 0
+    i = 0
+    cont = True
+    while cont:
+        begin = time.time()
+        worst_score = 0
+        
+        for idx, solution in enumerate(population): 
+            # check the performance of all solution first
+            prev_i = i
+            result, i_, dur, sol = local_search(node_list, solution, i, iterations)
+            
+            
+            
+            i = i_  
+            delta_i = i - prev_i
+            result_dict['iter'].append(i)
+            result_dict['score'].append(result)
+            result_dict['time'].append(dur)
+            result_dict['event'].append('normal')
+            result_dict['passes'].append(delta_i)
+
+            if result > worst_score:
+                worst_score = result
+                worst_idx = idx
+            total_dur += dur
+            if total_dur >= stop_time:
+                cont = False
+                print('breaking')
+                break
+
+        # check worst score and uniform x over child
+        # if child is better, replace worst with child
+            
+        if i < iterations and total_dur < stop_time:
+            begin = time.time()
+            pa1 = random.randint(0, population_size-1)
+            pa2 = random.randint(0, population_size-1)
+            while pa1 == pa2:
+                pa2 = random.randint(0, population_size-1)
+            child = uniform_crossover(population[pa1], population[pa2])
+            prev_i = i
+            child_score, i_, dur, _  = local_search(node_list, child, i, iterations)
+            i = i_
+            delta_i = i - prev_i
+            if child_score <= worst_score:
+                population[worst_idx] = child
+            dur = time.time() - begin
+            result_dict['iter'].append(i)
+            result_dict['score'].append(child_score)
+            result_dict['time'].append(dur)
+            result_dict['event'].append('crossover')
+            result_dict['passes'].append(delta_i)
+            total_dur += time.time() - begin
+    return result_dict
 
 
-nodes, maxcon = parse_graph()
 
-# res_MLS = MLS(nodes, 100)
-res_ILS = ILS(nodes, 1000, rate=0.1)
-# gls = GLS(nodes, 100, 50)
+# res_MLS = MLS_time(nodes, 99999999, 20)
+# res_ILS = ILS_time(nodes, 999999999, 20, rate=0.1)
+# gls = GLS_time(nodes, 99999999, 50, 20)
+
+
 
 
  
