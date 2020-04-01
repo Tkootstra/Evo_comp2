@@ -7,7 +7,7 @@ import pandas as pd
 MAX_ITER = 10000
 nodes = search_algos.parse_graph()
 
-rates = list(np.linspace(0.0, 0.2, num=10))
+rates = list(np.linspace(0.001, 0.01, num=10))
 rates = [float(x) for x in rates]
 
 pool = Pool(10)
