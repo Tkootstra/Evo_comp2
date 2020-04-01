@@ -201,7 +201,7 @@ def MLS_iter(node_list, iterations):
         result_dict['score'].append(result)
         result_dict['time'].append(dur)
         result_dict['passes'].append(delta_i)
-        print(f'{i}: Endscore: {result}, Mean duration: {round(dur / i_, 3)}')
+        # print(f'{i}: Endscore: {result}, Mean duration: {round(dur / i_, 3)}')
     
     return result_dict
 
@@ -287,7 +287,7 @@ def ILS_iter(node_list:list, iterations:int, rate=0.1):
     
     return result_dict
 
-def ILS_time(node_list:list, iterations:int, stop_time:int, rate=0.1):
+def ILS_time(node_list:list, iterations:int, stop_time:int, rate=0.55556):
     print('Running ILS...')
     
     result_dict = {key: [] for key in ['iter', 'score', 'time', 'passes']}
@@ -305,7 +305,7 @@ def ILS_time(node_list:list, iterations:int, stop_time:int, rate=0.1):
     
     
     
-    print(f'{i}: Endscore: {prev}, Mean duration: {round(dur / delta_i, 3)} ({delta_i} passes)')
+    # print(f'{i}: Endscore: {prev}, Mean duration: {round(dur / delta_i, 3)} ({delta_i} passes)')
     result_dict['iter'].append(i)
     result_dict['score'].append(prev)
     result_dict['time'].append(dur)
@@ -334,7 +334,7 @@ def ILS_time(node_list:list, iterations:int, stop_time:int, rate=0.1):
         global_dur = time.time() - start
        
 
-        print(f'{i}: Endscore: {current}, Mean duration: {round(dur / delta_i, 3)} ({delta_i} passes)')
+        # print(f'{i}: Endscore: {current}, Mean duration: {round(dur / delta_i, 3)} ({delta_i} passes)')
         total_dur += global_dur
         # mutate je prev solution
         # Als dit beter is, ga verder met dit resultaat
@@ -464,10 +464,75 @@ def GLS_time(node_list:list, iterations:int, stop_time, population_size=50):
     return result_dict
 
 
+def GLS_own_iter(node_list:list, iterations:int, population_size=50, replace_count=20):
+    print('Running GLS++...')
+    templist = []
+    result_dict = {key: [] for key in ['iter', 'score', 'time', 'event','passes']}
+    population = []
+    for ii in range(population_size):
+        population.append(create_solution(500))
+    
+    i = 0
+    cont = True
+    while cont:
+        begin = time.time()
+        worst_score = 0
+        results_ = []
+        for idx, solution in enumerate(population): 
+            # check the performance of all solution first
+            prev_i = i
+            result, i_, dur, sol = local_search(node_list, solution, i, iterations)
+            if result is None:
+                cont = False
+                print('breaking')
+                break
+            
+            
+            i = i_  
+            delta_i = i - prev_i
+            result_dict['iter'].append(i)
+            result_dict['score'].append(result)
+            result_dict['time'].append(dur)
+            result_dict['event'].append('normal')
+            result_dict['passes'].append(delta_i)
+            
+            
+            
+            results_.append(result)
+            print(f'{i}: Endscore: {result}, Mean duration: {round(dur / delta_i, 3)} ({delta_i} passes)')
+        print("mean of current population: {}".format(np.mean(results_)))
+        templist.append(np.mean(results_))  
+        # replace worst 20 sols with children
+        worst_idx = np.argsort(results_)
+        worst_n_sols = np.array(population)[worst_idx][:replace_count]
+        best_rest_sols = list(np.array(population)[worst_idx][replace_count:])
+        # best_rest_sols = [v for i,v in enumerate(population) if i not in worst_idx[:replace_count]]
+        
+        
+        # for sol1 in worst_n_sols:
+        #     for sol2 in np.array(best_rest_sols):
+        #         if np.array_equal(sol1, sol2):
+        #             print('heurt niet')
+        # shuffle solutions
+        best_rest_sols = list(worst_n_sols)
+        random.shuffle(best_rest_sols)
+        
+        children = []
+        # for every 2 parents, make 2 children
+        for ii in range(0,replace_count, 2):
+            pa1, pa2 = best_rest_sols[ii], best_rest_sols[ii+1]
+            child1, child2 = uniform_crossover(pa1, pa2), uniform_crossover(pa1,pa2)
+            best_rest_sols.append(child1)
+            best_rest_sols.append(child2)
+        print('made children')
+        population = best_rest_sols
+   
+    return result_dict, templist
+    
 
-# res_MLS = MLS_time(nodes, 99999999, 20)
-# res_ILS = ILS_time(nodes, 999999999, 20, rate=0.1)
-# gls = GLS_time(nodes, 99999999, 50, 20)
+# nodes = parse_graph()
+# test, means = GLS_own_iter(nodes, 4000, 50, 20)
+# print(means)
 
 
 
