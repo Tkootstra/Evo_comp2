@@ -228,7 +228,7 @@ def MLS_time(node_list, iterations, stop_time):
         result_dict['score'].append(result)
         result_dict['time'].append(dur)
         result_dict['passes'].append(delta_i)
-        print(f'{i}: Endscore: {result}, Mean duration: {round(dur / i_, 3)}')
+        # print(f'{i}: Endscore: {result}, Mean duration: {round(dur / i_, 3)}')
         total_dur += dur
 
     
