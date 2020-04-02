@@ -10,12 +10,12 @@ from multiprocessing import Pool
 from itertools import repeat
 import pandas as pd
 
-# nodes = search_algos.parse_graph()
-# # PARAMS
-# # iterative experiments
-# MAX_ITER = 10000
-# RATE = 0.0555556  # to be determined
-# N_CORES = 12
+nodes = search_algos.parse_graph()
+# PARAMS
+# iterative experiments
+MAX_ITER = 10000
+RATE = 0.004  # to be determined
+N_CORES = 12
 # # MLS: iterative
 # pool = Pool(12)
 # max_iters = [MAX_ITER] * N_CORES

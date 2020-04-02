@@ -64,6 +64,7 @@ def mutate_solution(solution, rate):
     list0 = [i for i, v in enumerate(solution) if v == 0]
     list1 = [i for i, v in enumerate(solution) if v == 1]
     how_many = round(rate * len(solution))
+    # print("len of listO: {}, len of list1: {}, how many == {}".format(len(list0), len(list1), how_many))
     indices0 = list(np.random.choice(list0, size = how_many, replace=False))
     indices1 = list(np.random.choice(list1, size= how_many, replace=False))
     #endlist = [flip_bit(v) for i,v in enumerate(solution) if i in indices0 or i in indices1]
@@ -213,7 +214,7 @@ def MLS_time(node_list, iterations, stop_time):
 
     i = 0
     total_dur = 0
-    print(total_dur)
+    # print(total_dur)
     solution = create_solution(500)
     
     while i < iterations and total_dur < stop_time:
@@ -236,7 +237,7 @@ def MLS_time(node_list, iterations, stop_time):
 
 
 
-def ILS_iter(node_list:list, iterations:int, rate=0.1):
+def ILS_iter(node_list:list, iterations:int, rate=0.004):
     print('Running ILS...')
     
     result_dict = {key: [] for key in ['iter', 'score', 'time', 'passes']}
@@ -287,7 +288,7 @@ def ILS_iter(node_list:list, iterations:int, rate=0.1):
     
     return result_dict
 
-def ILS_time(node_list:list, iterations:int, stop_time:int, rate=0.55556):
+def ILS_time(node_list:list, iterations:int, stop_time:int, rate=0.004):
     print('Running ILS...')
     
     result_dict = {key: [] for key in ['iter', 'score', 'time', 'passes']}
@@ -495,12 +496,12 @@ def GLS_own_iter(node_list:list, iterations:int, population_size=50, replace_cou
             result_dict['time'].append(dur)
             result_dict['event'].append('normal')
             result_dict['passes'].append(delta_i)
-            
+          
             
             
             results_.append(result)
-            print(f'{i}: Endscore: {result}, Mean duration: {round(dur / delta_i, 3)} ({delta_i} passes)')
-        print("mean of current population: {}".format(np.mean(results_)))
+            # print(f'{i}: Endscore: {result}, Mean duration: {round(dur / delta_i, 3)} ({delta_i} passes)')
+        # print("mean of current population: {}".format(np.mean(results_)))
         templist.append(np.mean(results_))  
         # replace worst 20 sols with children
         worst_idx = np.argsort(results_)
@@ -517,22 +518,21 @@ def GLS_own_iter(node_list:list, iterations:int, population_size=50, replace_cou
         best_rest_sols = list(worst_n_sols)
         random.shuffle(best_rest_sols)
         
-        children = []
+        print("len of best sols is: {}, replace count is: {}".format(len(best_rest_sols), replace_count))
         # for every 2 parents, make 2 children
         for ii in range(0,replace_count, 2):
             pa1, pa2 = best_rest_sols[ii], best_rest_sols[ii+1]
             child1, child2 = uniform_crossover(pa1, pa2), uniform_crossover(pa1,pa2)
             best_rest_sols.append(child1)
             best_rest_sols.append(child2)
-        print('made children')
+        # print('made children')
         population = best_rest_sols
+          # BUG: soms is de len van best sols kleiner dan replace_count, aan het eind van de procedure???
+          
    
-    return result_dict, templist
+    return result_dict
     
 
-# nodes = parse_graph()
-# test, means = GLS_own_iter(nodes, 4000, 50, 20)
-# print(means)
 
 
 
